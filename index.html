@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 초입체 10초 미로 탈출</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: #fff;
+            font-family: 'Pretendard', 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            text-align: center;
+        }
+
+        /* 3D 원근감 뷰 최적화 */
+        #stage {
+            perspective: 800px;
+            margin: 15px auto;
+        }
+
+        #maze {
+            display: grid;
+            gap: 3px;
+            background-color: #0b1325;
+            padding: 10px;
+            border-radius: 12px;
+            transform: rotateX(45deg) rotateZ(-5deg) translateZ(0);
+            transform-style: preserve-3d;
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 255, 245, 0.2);
+            transition: transform 0.4s ease;
+        }
+
+        .cell {
+            width: 34px;
+            height: 34px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        /* 3D 입체 블록(벽) */
+        .wall {
+            background: linear-gradient(180deg, #ff416c 0%, #8a2387 100%);
+            border-radius: 6px;
+            transform: translateZ(20px);
+            box-shadow: 
+                0 8px 0 #500e36,
+                0 15px 15px rgba(0,0,0,0.6),
+                inset 0 2px 4px rgba(255,255,255,0.4);
+        }
+
+        .path {
+            background-color: #162447;
+            border-radius: 4px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+        }
+
+        /* 3D 입체 캐릭터 (움직임 효과) */
+        .player {
+            background: radial-gradient(circle, #00fff5, #008b8b);
+            border-radius: 50%;
+            transform: translateZ(24px);
+            box-shadow: 
+                0 0 15px #00fff5, 
+                0 8px 0 #005f5f,
+                0 12px 10px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            animation: bounce 0.6s infinite alternate ease-in-out;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateZ(22px) translateY(0); }
+            100% { transform: translateZ(30px) translateY(-4px); }
+        }
+
+        /* 디테일 높은 3D 입체 괴물 */
+        .monster {
+            background: radial-gradient(circle, #ff0055, #67001e);
+            border-radius: 8px;
+            transform: translateZ(24px);
+            border: 2px solid #ff3377;
+            box-shadow: 
+                0 0 15px #ff0055, 
+                0 8px 0 #440010,
+                0 12px 10px rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            animation: monsterFloat 0.4s infinite alternate ease-in-out;
+        }
+
+        @keyframes monsterFloat {
+            0% { transform: translateZ(22px) scale(0.95); }
+            100% { transform: translateZ(32px) scale(1.1); }
+        }
+
+        /* 코인 */
+        .coin {
+            background: radial-gradient(circle, #ffe600, #ffaa00);
+            border-radius: 50%;
+            transform: translateZ(12px);
+            box-shadow: 0 0 12px #ffe600, 0 4px 0 #996600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            animation: spin 1.2s infinite linear;
+        }
+
+        /* 출구 */
+        .exit {
+            background: radial-gradient(circle, #00ff66, #008833);
+            border-radius: 6px;
+            transform: translateZ(8px);
+            box-shadow: 0 0 15px #00ff66;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* UI 엘리먼트 */
+        #ui {
+            display: flex;
+            gap: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            padding: 12px 25px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .timer-low { color: #ff3333; animation: blink 0.2s infinite; }
+        @keyframes blink { 50% { opacity: 0.4; } }
+
+        /* 오버레이 모달 창 */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 20, 0.96);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 12px;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { font-size: 26px; color: #00fff5; text-shadow: 0 0 10px #00fff5; margin-bottom: 10px; }
+        .monster-msg { font-size: 20px; color: #ff0055; margin: 15px 0; font-weight: bold; text-shadow: 0 0 8px #ff0055; }
+
+        button {
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00fff5, #008b8b);
+            border: none;
+            color: #000;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,255,245,0.4);
+            transition: 0.2s;
+        }
+
+        button:hover { transform: scale(1.08); }
+
+        /* 상점 리스트 디자인 */
+        .shop-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 15px 0;
+            width: 88%;
+            max-height: 280px;
+        }
+
+        .shop-item {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.15);
+            text-align: left;
+        }
+
+        .shop-item-info { display: flex; align-items: center; gap: 12px; }
+        .shop-item-icon { font-size: 28px; }
+        .star-rank { color: #ffd700; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- UI 정보창 -->
+        <div id="ui">
+            <div>STAGE <span id="level-txt">1</span></div>
+            <div>⏱️ <span id="timer-txt">10</span>s</div>
+            <div>💰 <span id="coin-txt">0</span></div>
+        </div>
+
+        <!-- 3D 미로 스테이지 -->
+        <div id="stage">
+            <div id="maze"></div>
+        </div>
+
+        <!-- 시작 화면 -->
+        <div id="start-screen" class="overlay">
+            <h1>😴 식곤증 타파! 초입체 3D 미로 🏃</h1>
+            <div class="monster-msg">👿 괴물들: "크하하! 미로에 도전하겠느냐?!"</div>
+            <button onclick="startGame()">도전하기!</button>
+        </div>
+
+        <!-- 3개 랜덤 캐릭터 상점 화면 -->
+        <div id="shop-screen" class="overlay hidden">
+            <h1>🛒 캐릭터 상점 (랜덤 3종)</h1>
+            <p style="font-size:13px; color:#aaa;">스테이지를 클리어할 때마다 새로운 3종이 등장합니다!</p>
+            <div class="shop-items" id="shop-list"></div>
+            <button onclick="nextLevel()">다음 스테이지 출발!</button>
+        </div>
+
+        <!-- 게임 오버 화면 -->
+        <div id="gameover-screen" class="overlay hidden">
+            <h1 style="color: #ff3333; text-shadow: 0 0 10px #ff3333;">💥 GAME OVER 💥</h1>
+            <p id="gameover-msg" style="margin: 15px 0; color:#ddd;"></p>
+            <button onclick="resetGame()">처음부터 다시 시작</button>
+        </div>
+    </div>
+
+    <script>
+        // 게임 상태 변수
+        let level = 1;
+        let coins = 0;
+        let timeLeft = 10;
+        let timerId = null;
+        let monsterIntervalId = null;
+        let mazeSize = 7;
+        let grid = [];
+        
+        let playerPos = { x: 1, y: 1 };
+        let exitPos = { x: 0, y: 0 };
+        let monsters = [];
+        let coinList = [];
+
+        // 50가지 캐릭터 데이터베이스 자동 생성
+        const icons = ["😃","🐱","🐶","🦊","🦁","🐯","🐸","🐵","🐼","🐨","🐰","🦄","🐲","🤖","👽","👻","🤖","🎃","⚔️","🥷","🧙‍♂️","🧚","🧜‍♂️","🧛","🦸","🦹","💎","⚡","🔥","❄️","🔮","🧿","🎯","🚀","🛸","🌌","👑","🥇","🤡","👺","🤖","👾","🐲","🦅","🦉","🦇","🐺","🐗","🦄","갓"];
+        const skillTypes = [
+            { type: 'none', desc: "능력 없음", rank: 1, baseCost: 0 },
+            { type: 'speed', desc: "이동속도 증가 (체감 반응 향상)", rank: 2, baseCost: 15 },
+            { type: 'time', desc: "괴물 이동속도 50% 감속", rank: 3, baseCost: 35 },
+            { type: 'stealth', desc: "은신 (괴물 충돌 무시)", rank: 4, baseCost: 60 },
+            { type: 'kill', desc: "괴물 사냥 (부딪히면 괴물 제거)", rank: 5, baseCost: 100 }
+        ];
+
+        const allCharacters = Array.from({ length: 50 }, (_, i) => {
+            const skillObj = skillTypes[i % skillTypes.length];
+            const star = "★".repeat(skillObj.rank);
+            const cost = skillObj.baseCost + Math.floor(i / 5) * 5;
+            return {
+                id: i,
+                name: `캐릭터 #${i + 1}`,
+                icon: icons[i % icons.length],
+                skill: skillObj.type,
+                desc: skillObj.desc,
+                rankText: star,
+                cost: cost
+            };
+        });
+
+        let unlockedCharIds = [0]; // 기본 0번 해금
+        let activeChar = allCharacters[0];
+        let currentShopDisplay = [];
+
+        // 게임 시작
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            initLevel();
+        }
+
+        function resetGame() {
+            level = 1;
+            coins = 0;
+            mazeSize = 7;
+            unlockedCharIds = [0];
+            activeChar = allCharacters[0];
+            document.getElementById('gameover-screen').classList.add('hidden');
+            initLevel();
+        }
+
+        // 스테이지 초기화
+        function initLevel() {
+            clearInterval(timerId);
+            clearInterval(monsterIntervalId);
+            
+            timeLeft = 10;
+            document.getElementById('timer-txt').innerText = timeLeft;
+            document.getElementById('timer-txt').classList.remove('timer-low');
+            document.getElementById('level-txt').innerText = level;
+            document.getElementById('coin-txt').innerText = coins;
+
+            // 스테이지에 따른 크기 확대 (최대 15x15)
+            mazeSize = Math.min(7 + Math.floor((level - 1) / 2) * 2, 15);
+            
+            generateMaze();
+            renderMaze();
+
+            // 타이머 루프
+            timerId = setInterval(() => {
+                timeLeft--;
+                const timerTxt = document.getElementById('timer-txt');
+                timerTxt.innerText = timeLeft;
+
+                if (timeLeft <= 3) timerTxt.classList.add('timer-low');
+                if (timeLeft <= 0) gameOver("⏰ 10초 시간 초과! 식곤증이 찾아왔습니다...");
+            }, 1000);
+
+            // 괴물 이동 루프 (시간 조율 능력 적용)
+            let speed = activeChar.skill === 'time' ? 800 : 400;
+            monsterIntervalId = setInterval(moveMonsters, speed);
+        }
+
+        // DFS 미로 생성
+        function generateMaze() {
+            grid = Array.from({ length: mazeSize }, () => Array(mazeSize).fill(1));
+
+            function walk(x, y) {
+                grid[y][x] = 0;
+                const dirs = [[0, -2], [0, 2], [-2, 0], [2, 0]].sort(() => Math.random() - 0.5);
+
+                for (let [dx, dy] of dirs) {
+                    let nx = x + dx, ny = y + dy;
+                    if (nx > 0 && nx < mazeSize - 1 && ny > 0 && ny < mazeSize - 1 && grid[ny][nx] === 1) {
+                        grid[y + dy / 2][x + dx / 2] = 0;
+                        walk(nx, ny);
+                    }
+                }
+            }
+
+            walk(1, 1);
+            playerPos = { x: 1, y: 1 };
+            exitPos = { x: mazeSize - 2, y: mazeSize - 2 };
+            grid[exitPos.y][exitPos.x] = 0;
+
+            monsters = [];
+            coinList = [];
+
+            let monsterCount = Math.min(Math.floor(level / 2) + 1, 5);
+            let coinCount = Math.floor(mazeSize / 2);
+
+            for (let y = 1; y < mazeSize - 1; y++) {
+                for (let x = 1; x < mazeSize - 1; x++) {
+                    if (grid[y][x] === 0 && (x !== playerPos.x || y !== playerPos.y) && (x !== exitPos.x || y !== exitPos.y)) {
+                        if (Math.random() < 0.15 && coinCount > 0) {
+                            coinList.push({ x, y });
+                            coinCount--;
+                        } else if (Math.random() < 0.12 && monsterCount > 0 && (x > 2 || y > 2)) {
+                            monsters.push({ x, y });
+                            monsterCount--;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 미로 렌더링
+        function renderMaze() {
+            const mazeDiv = document.getElementById('maze');
+            mazeDiv.style.gridTemplateColumns = `repeat(${mazeSize}, 34px)`;
+            mazeDiv.innerHTML = '';
+
+            for (let y = 0; y < mazeSize; y++) {
+                for (let x = 0; x < mazeSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+
+                    if (grid[y][x] === 1) {
+                        cell.classList.add('wall');
+                    } else {
+                        cell.classList.add('path');
+
+                        if (x === exitPos.x && y === exitPos.y) {
+                            cell.classList.add('exit');
+                            cell.innerText = '🏁';
+                        } else if (x === playerPos.x && y === playerPos.y) {
+                            cell.classList.add('player');
+                            cell.innerText = activeChar.icon;
+                        } else if (monsters.some(m => m.x === x && m.y === y)) {
+                            cell.classList.add('monster');
+                            cell.innerText = '👹';
+                        } else if (coinList.some(c => c.x === x && c.y === y)) {
+                            cell.classList.add('coin');
+                            cell.innerText = '🪙';
+                        }
+                    }
+                    mazeDiv.appendChild(cell);
+                }
+            }
+        }
+
+        // 플레이어 이동 조작
+        window.addEventListener('keydown', (e) => {
+            if (!document.getElementById('start-screen').classList.contains('hidden') ||
+                !document.getElementById('shop-screen').classList.contains('hidden') ||
+                !document.getElementById('gameover-screen').classList.contains('hidden')) return;
+
+            let dx = 0, dy = 0;
+            if (e.key === 'ArrowUp' || e.key === 'w') dy = -1;
+            if (e.key === 'ArrowDown' || e.key === 's') dy = 1;
+            if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
+            if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
+
+            if (dx !== 0 || dy !== 0) {
+                let nx = playerPos.x + dx;
+                let ny = playerPos.y + dy;
+
+                if (nx >= 0 && nx < mazeSize && ny >= 0 && ny < mazeSize && grid[ny][nx] === 0) {
+                    playerPos.x = nx;
+                    playerPos.y = ny;
+
+                    // 코인 획득
+                    coinList = coinList.filter(c => {
+                        if (c.x === playerPos.x && c.y === playerPos.y) {
+                            coins += 10;
+                            document.getElementById('coin-txt').innerText = coins;
+                            return false;
+                        }
+                        return true;
+                    });
+
+                    checkMonsterCollision();
+
+                    if (playerPos.x === exitPos.x && playerPos.y === exitPos.y) {
+                        clearLevel();
+                    }
+
+                    renderMaze();
+                }
+            }
+        });
+
+        // 괴물 랜덤 이동
+        function moveMonsters() {
+            monsters.forEach(m => {
+                const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+                const validDirs = dirs.filter(([dx, dy]) => {
+                    let nx = m.x + dx, ny = m.y + dy;
+                    return nx >= 0 && nx < mazeSize && ny >= 0 && ny < mazeSize && grid[ny][nx] === 0;
+                });
+
+                if (validDirs.length > 0) {
+                    const [dx, dy] = validDirs[Math.floor(Math.random() * validDirs.length)];
+                    m.x += dx;
+                    m.y += dy;
+                }
+            });
+
+            checkMonsterCollision();
+            renderMaze();
+        }
+
+        // 괴물 충돌 판정
+        function checkMonsterCollision() {
+            monsters.forEach((m, idx) => {
+                if (m.x === playerPos.x && m.y === playerPos.y) {
+                    if (activeChar.skill === 'kill') {
+                        monsters.splice(idx, 1);
+                    } else if (activeChar.skill !== 'stealth') {
+                        gameOver("👹 괴물에게 처단당했습니다!");
+                    }
+                }
+            });
+        }
+
+        function clearLevel() {
+            clearInterval(timerId);
+            clearInterval(monsterIntervalId);
+            coins += 15;
+            openShop();
+        }
+
+        // 상점 열기 (전체 50개 중 랜덤 3개 추첨)
+        function openShop() {
+            const shopList = document.getElementById('shop-list');
+            shopList.innerHTML = '';
+
+            // 랜덤 3개 선택 (현재 장착 중이 아닌 것 우선 포함 가능)
+            let shuffled = [...allCharacters].sort(() => Math.random() - 0.5);
+            currentShopDisplay = shuffled.slice(0, 3);
+
+            currentShopDisplay.forEach(char => {
+                const item = document.createElement('div');
+                item.classList.add('shop-item');
+
+                const isUnlocked = unlockedCharIds.includes(char.id);
+                const isEquipped = activeChar.id === char.id;
+
+                let btnHTML = '';
+                if (isEquipped) {
+                    btnHTML = `<button style="background:#444; color:#aaa; cursor:default;" disabled>장착 중</button>`;
+                } else if (isUnlocked) {
+                    btnHTML = `<button onclick="selectChar(${char.id})">선택</button>`;
+                } else {
+                    btnHTML = `<button onclick="buyChar(${char.id})">${char.cost}💰 구매</button>`;
+                }
+
+                item.innerHTML = `
+                    <div class="shop-item-info">
+                        <div class="shop-item-icon">${char.icon}</div>
+                        <div>
+                            <div><strong>${char.name}</strong> <span class="star-rank">${char.rankText}</span></div>
+                            <div style="font-size:11px; color:#bbb;">${char.desc}</div>
+                        </div>
+                    </div>
+                    ${btnHTML}
+                `;
+                shopList.appendChild(item);
+            });
+
+            document.getElementById('shop-screen').classList.remove('hidden');
+        }
+
+        function buyChar(id) {
+            const char = allCharacters.find(c => c.id === id);
+            if (coins >= char.cost) {
+                coins -= char.cost;
+                unlockedCharIds.push(id);
+                selectChar(id);
+            } else {
+                alert("💰 코인이 부족합니다!");
+            }
+        }
+
+        function selectChar(id) {
+            activeChar = allCharacters.find(c => c.id === id);
+            openShop();
+        }
+
+        function nextLevel() {
+            level++;
+            document.getElementById('shop-screen').classList.add('hidden');
+            initLevel();
+        }
+
+        function gameOver(msg) {
+            clearInterval(timerId);
+            clearInterval(monsterIntervalId);
+            document.getElementById('gameover-msg').innerText = msg;
+            document.getElementById('gameover-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

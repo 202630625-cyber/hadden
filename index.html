@@ -2,578 +2,599 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 초입체 10초 미로 탈출</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>⚡ 식곤증 타파! 10초 3D 미로 탈출 ⚡</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            touch-action: manipulation;
+            overflow: hidden;
             user-select: none;
         }
-
-        body {
-            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
-            color: #fff;
-            font-family: 'Pretendard', 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
+        .font-title {
+            font-family: 'Black Han Sans', sans-serif;
         }
-
-        #game-container {
-            position: relative;
-            text-align: center;
+        .pulse-timer {
+            animation: pulse-red 0.5s infinite alternate;
         }
-
-        /* 3D 원근감 뷰 최적화 */
-        #stage {
-            perspective: 800px;
-            margin: 15px auto;
+        @keyframes pulse-red {
+            0% { transform: scale(1); color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
+            100% { transform: scale(1.15); color: #f87171; text-shadow: 0 0 25px rgba(248, 113, 113, 1); }
         }
-
-        #maze {
-            display: grid;
-            gap: 3px;
-            background-color: #0b1325;
-            padding: 10px;
-            border-radius: 12px;
-            transform: rotateX(45deg) rotateZ(-5deg) translateZ(0);
-            transform-style: preserve-3d;
-            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 255, 245, 0.2);
-            transition: transform 0.4s ease;
-        }
-
-        .cell {
-            width: 34px;
-            height: 34px;
-            position: relative;
-            transform-style: preserve-3d;
-        }
-
-        /* 3D 입체 블록(벽) */
-        .wall {
-            background: linear-gradient(180deg, #ff416c 0%, #8a2387 100%);
-            border-radius: 6px;
-            transform: translateZ(20px);
-            box-shadow: 
-                0 8px 0 #500e36,
-                0 15px 15px rgba(0,0,0,0.6),
-                inset 0 2px 4px rgba(255,255,255,0.4);
-        }
-
-        .path {
-            background-color: #162447;
-            border-radius: 4px;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
-        }
-
-        /* 3D 입체 캐릭터 (움직임 효과) */
-        .player {
-            background: radial-gradient(circle, #00fff5, #008b8b);
-            border-radius: 50%;
-            transform: translateZ(24px);
-            box-shadow: 
-                0 0 15px #00fff5, 
-                0 8px 0 #005f5f,
-                0 12px 10px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            animation: bounce 0.6s infinite alternate ease-in-out;
-        }
-
-        @keyframes bounce {
-            0% { transform: translateZ(22px) translateY(0); }
-            100% { transform: translateZ(30px) translateY(-4px); }
-        }
-
-        /* 디테일 높은 3D 입체 괴물 */
-        .monster {
-            background: radial-gradient(circle, #ff0055, #67001e);
-            border-radius: 8px;
-            transform: translateZ(24px);
-            border: 2px solid #ff3377;
-            box-shadow: 
-                0 0 15px #ff0055, 
-                0 8px 0 #440010,
-                0 12px 10px rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            animation: monsterFloat 0.4s infinite alternate ease-in-out;
-        }
-
-        @keyframes monsterFloat {
-            0% { transform: translateZ(22px) scale(0.95); }
-            100% { transform: translateZ(32px) scale(1.1); }
-        }
-
-        /* 코인 */
-        .coin {
-            background: radial-gradient(circle, #ffe600, #ffaa00);
-            border-radius: 50%;
-            transform: translateZ(12px);
-            box-shadow: 0 0 12px #ffe600, 0 4px 0 #996600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            animation: spin 1.2s infinite linear;
-        }
-
-        /* 출구 */
-        .exit {
-            background: radial-gradient(circle, #00ff66, #008833);
-            border-radius: 6px;
-            transform: translateZ(8px);
-            box-shadow: 0 0 15px #00ff66;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-
-        /* UI 엘리먼트 */
-        #ui {
-            display: flex;
-            gap: 25px;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(8px);
-            padding: 12px 25px;
-            border-radius: 30px;
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .timer-low { color: #ff3333; animation: blink 0.2s infinite; }
-        @keyframes blink { 50% { opacity: 0.4; } }
-
-        /* 오버레이 모달 창 */
-        .overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 20, 0.96);
-            backdrop-filter: blur(10px);
+        /* Touch Virtual D-Pad Styling */
+        .dpad-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 10;
             border-radius: 12px;
+            font-size: 1.25rem;
         }
-
-        .hidden { display: none !important; }
-
-        h1 { font-size: 26px; color: #00fff5; text-shadow: 0 0 10px #00fff5; margin-bottom: 10px; }
-        .monster-msg { font-size: 20px; color: #ff0055; margin: 15px 0; font-weight: bold; text-shadow: 0 0 8px #ff0055; }
-
-        button {
-            padding: 12px 28px;
-            font-size: 16px;
-            font-weight: bold;
-            background: linear-gradient(45deg, #00fff5, #008b8b);
-            border: none;
-            color: #000;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(0,255,245,0.4);
-            transition: 0.2s;
+        .dpad-btn:active {
+            background: rgba(250, 204, 21, 0.4);
+            transform: scale(0.92);
         }
-
-        button:hover { transform: scale(1.08); }
-
-        /* 상점 리스트 디자인 */
-        .shop-items {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin: 15px 0;
-            width: 88%;
-            max-height: 280px;
-        }
-
-        .shop-item {
-            background: rgba(255,255,255,0.05);
-            padding: 12px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(255,255,255,0.15);
-            text-align: left;
-        }
-
-        .shop-item-info { display: flex; align-items: center; gap: 12px; }
-        .shop-item-icon { font-size: 28px; }
-        .star-rank { color: #ffd700; font-size: 12px; }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-white w-screen h-screen relative overflow-hidden">
 
-    <div id="game-container">
-        <!-- UI 정보창 -->
-        <div id="ui">
-            <div>STAGE <span id="level-txt">1</span></div>
-            <div>⏱️ <span id="timer-txt">10</span>s</div>
-            <div>💰 <span id="coin-txt">0</span></div>
+<script>
+    class AudioEngine {
+        constructor() {
+            this.ctx = null;
+        }
+        
+        init() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        // Timer Urgent Tick
+        playTick(isUrgent = false) {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = isUrgent ? 'sawtooth' : 'sine';
+            osc.frequency.setValueAtTime(isUrgent ? 880 : 440, this.ctx.currentTime);
+            
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.15);
+        }
+
+        // Loud High-Pitched Alarm to Shock User Awake
+        playWakeUpAlarm() {
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            for (let i = 0; i < 4; i++) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(1000 + i * 200, now + i * 0.08);
+                
+                gain.gain.setValueAtTime(0.5, now + i * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.07);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + i * 0.08);
+                osc.stop(now + i * 0.08 + 0.07);
+            }
+        }
+
+        // Attack Laser Beam Sound
+        playLaser() {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(900, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.2);
+
+            gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.2);
+        }
+
+        // Monster Death Explosion
+        playExplosion() {
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const bufferSize = this.ctx.sampleRate * 0.3;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(800, now);
+            filter.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0.6, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            noise.start(now);
+            noise.stop(now + 0.3);
+        }
+
+        // Stage Victory Sound Effect
+        playVictory() {
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+            notes.forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+                gain.gain.setValueAtTime(0.4, now + idx * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.25);
+            });
+        }
+
+        // Fail / Game Over Sound
+        playFail() {
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const notes = [440, 370, 310, 220];
+            notes.forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+                gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + idx * 0.12);
+                osc.stop(now + idx * 0.12 + 0.15);
+            });
+        }
+    }
+
+    const audio = new AudioEngine();
+</script>
+
+<!-- 1. SURVEY / INITIAL SCREEN -->
+<div id="surveyScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 p-4 overflow-y-auto">
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl max-w-lg w-full text-center border-2 border-yellow-400 shadow-2xl relative overflow-hidden my-auto">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400 rounded-full blur-3xl opacity-30"></div>
+        <div class="text-5xl mb-3 text-yellow-400"><i class="fa-solid fa-bolt-lightning animate-bounce"></i></div>
+        <h1 class="text-3xl sm:text-4xl font-title text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 mb-2">
+            식곤증 타파! 10초 미로
+        </h1>
+        <p class="text-slate-300 mb-6 text-xs sm:text-sm leading-relaxed">
+            점심 식사 후 찾아오는 참을 수 없는 강렬한 졸음! ⚡<br>
+            <strong>10초 제한시간 미로</strong>를 탈출하여 뇌세포를 각성시키세요!
+        </p>
+
+        <!-- Survey Section -->
+        <div class="bg-slate-800/80 p-5 rounded-2xl mb-6 border border-slate-700 text-left">
+            <label class="block font-bold text-base sm:text-lg mb-2 text-yellow-300 flex justify-between items-center">
+                <span>😴 현재 당신의 식곤증 정도는?</span>
+                <span id="surveyValText" class="text-2xl font-extrabold text-red-400">Lv. 5</span>
+            </label>
+            <input type="range" id="drowsinessSlider" min="1" max="10" value="5" class="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-400 mb-2">
+            <div class="flex justify-between text-xs text-slate-400">
+                <span>1 (약간 피곤)</span>
+                <span>5 (무거운 눈꺼풀)</span>
+                <span>10 (기절 직전⚡)</span>
+            </div>
+            <div id="surveyDesc" class="mt-3 text-xs text-yellow-200 bg-yellow-950/40 p-2.5 rounded-lg border border-yellow-600/30">
+                📌 난이도: 미로 크기 보통 (7x7) | 1단계에는 방해 괴물이 등장하지 않습니다.
+            </div>
         </div>
 
-        <!-- 3D 미로 스테이지 -->
-        <div id="stage">
-            <div id="maze"></div>
+        <button id="startBtn" class="w-full py-4 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 hover:from-yellow-400 hover:to-red-400 text-slate-950 font-title text-2xl rounded-2xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
+            <i class="fa-solid fa-play"></i> 각성 미로 시작하기!
+        </button>
+    </div>
+</div>
+
+<!-- 2. GAME HUD UI (In-Game Overlay) -->
+<div id="gameHUD" class="hidden absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-3 sm:p-6">
+    <!-- Top Header HUD -->
+    <div class="flex justify-between items-start w-full gap-2">
+        <!-- Stage Info -->
+        <div class="glass-panel px-4 py-2 sm:px-5 sm:py-3 rounded-2xl pointer-events-auto border-l-4 border-yellow-400 shadow-md">
+            <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold">STAGE</div>
+            <div id="hudStage" class="text-xl sm:text-2xl font-title text-yellow-300">STAGE 1</div>
+            <div id="hudMonsterStatus" class="text-[10px] sm:text-xs text-emerald-400 font-bold mt-0.5">평화 모드 (괴물 없음)</div>
         </div>
 
-        <!-- 시작 화면 -->
-        <div id="start-screen" class="overlay">
-            <h1>😴 식곤증 타파! 초입체 3D 미로 🏃</h1>
-            <div class="monster-msg">👿 괴물들: "크하하! 미로에 도전하겠느냐?!"</div>
-            <button onclick="startGame()">도전하기!</button>
+        <!-- Timer Center -->
+        <div class="glass-panel px-4 py-2 sm:px-6 sm:py-2 rounded-2xl text-center border-2 border-red-500 shadow-xl pointer-events-auto bg-slate-900/90">
+            <div class="text-[10px] sm:text-xs text-red-400 font-bold tracking-wider">남은 시간</div>
+            <div id="hudTimer" class="text-3xl sm:text-5xl font-title text-red-500 tracking-wider">10.00</div>
         </div>
 
-        <!-- 3개 랜덤 캐릭터 상점 화면 -->
-        <div id="shop-screen" class="overlay hidden">
-            <h1>🛒 캐릭터 상점 (랜덤 3종)</h1>
-            <p style="font-size:13px; color:#aaa;">스테이지를 클리어할 때마다 새로운 3종이 등장합니다!</p>
-            <div class="shop-items" id="shop-list"></div>
-            <button onclick="nextLevel()">다음 스테이지 출발!</button>
-        </div>
-
-        <!-- 게임 오버 화면 -->
-        <div id="gameover-screen" class="overlay hidden">
-            <h1 style="color: #ff3333; text-shadow: 0 0 10px #ff3333;">💥 GAME OVER 💥</h1>
-            <p id="gameover-msg" style="margin: 15px 0; color:#ddd;"></p>
-            <button onclick="resetGame()">처음부터 다시 시작</button>
+        <!-- Weapon HUD -->
+        <div class="glass-panel px-4 py-2 sm:px-5 sm:py-3 rounded-2xl pointer-events-auto border-r-4 border-cyan-400 text-right shadow-md">
+            <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold">장착 아이템</div>
+            <div id="hudWeapon" class="text-sm sm:text-lg font-bold text-cyan-300 flex items-center justify-end gap-1.5">
+                <span>맨손</span> <i class="fa-solid fa-hand"></i>
+            </div>
+            <div class="hidden sm:block text-[10px] text-slate-400 mt-0.5">Spacebar / 버튼으로 공격</div>
         </div>
     </div>
 
-    <script>
-        // 게임 상태 변수
-        let level = 1;
-        let coins = 0;
-        let timeLeft = 10;
-        let timerId = null;
-        let monsterIntervalId = null;
-        let mazeSize = 7;
-        let grid = [];
-        
-        let playerPos = { x: 1, y: 1 };
-        let exitPos = { x: 0, y: 0 };
-        let monsters = [];
-        let coinList = [];
+    <!-- Bottom Controls & Action Bar -->
+    <div class="flex justify-between items-end w-full pointer-events-auto">
+        <!-- Mobile Touch Virtual D-Pad -->
+        <div class="sm:hidden grid grid-cols-3 gap-1.5 w-36 h-36">
+            <div></div>
+            <button id="btnUp" class="dpad-btn"><i class="fa-solid fa-chevron-up"></i></button>
+            <div></div>
+            <button id="btnLeft" class="dpad-btn"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="dpad-btn bg-slate-800/40 border-none"><i class="fa-solid fa-gamepad text-slate-500 text-sm"></i></div>
+            <button id="btnRight" class="dpad-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            <div></div>
+            <button id="btnDown" class="dpad-btn"><i class="fa-solid fa-chevron-down"></i></button>
+            <div></div>
+        </div>
 
-        // 50가지 캐릭터 데이터베이스 자동 생성
-        const icons = ["😃","🐱","🐶","🦊","🦁","🐯","🐸","🐵","🐼","🐨","🐰","🦄","🐲","🤖","👽","👻","🤖","🎃","⚔️","🥷","🧙‍♂️","🧚","🧜‍♂️","🧛","🦸","🦹","💎","⚡","🔥","❄️","🔮","🧿","🎯","🚀","🛸","🌌","👑","🥇","🤡","👺","🤖","👾","🐲","🦅","🦉","🦇","🐺","🐗","🦄","갓"];
-        const skillTypes = [
-            { type: 'none', desc: "능력 없음", rank: 1, baseCost: 0 },
-            { type: 'speed', desc: "이동속도 증가 (체감 반응 향상)", rank: 2, baseCost: 15 },
-            { type: 'time', desc: "괴물 이동속도 50% 감속", rank: 3, baseCost: 35 },
-            { type: 'stealth', desc: "은신 (괴물 충돌 무시)", rank: 4, baseCost: 60 },
-            { type: 'kill', desc: "괴물 사냥 (부딪히면 괴물 제거)", rank: 5, baseCost: 100 }
-        ];
+        <!-- PC Key Helper -->
+        <div class="hidden sm:block glass-panel px-4 py-2.5 rounded-xl text-xs text-slate-300">
+            <p>⌨️ <strong>이동:</strong> WASD / 방향키</p>
+            <p>💥 <strong>괴물 퇴치:</strong> Spacebar</p>
+        </div>
 
-        const allCharacters = Array.from({ length: 50 }, (_, i) => {
-            const skillObj = skillTypes[i % skillTypes.length];
-            const star = "★".repeat(skillObj.rank);
-            const cost = skillObj.baseCost + Math.floor(i / 5) * 5;
-            return {
-                id: i,
-                name: `캐릭터 #${i + 1}`,
-                icon: icons[i % icons.length],
-                skill: skillObj.type,
-                desc: skillObj.desc,
-                rankText: star,
-                cost: cost
-            };
-        });
+        <!-- Attack Button for Mobile / Screen Click -->
+        <button id="attackBtn" class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-500 to-orange-600 rounded-full shadow-2xl flex flex-col items-center justify-center text-xl sm:text-2xl text-white active:scale-90 border-2 border-white/40 font-bold">
+            <i class="fa-solid fa-gun"></i>
+            <span class="text-[10px] font-normal">공격</span>
+        </button>
+    </div>
+</div>
 
-        let unlockedCharIds = [0]; // 기본 0번 해금
-        let activeChar = allCharacters[0];
-        let currentShopDisplay = [];
+<!-- 3. ITEM SELECTION MODAL (Between Stages) -->
+<div id="itemModal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 overflow-y-auto">
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl max-w-2xl w-full text-center border-2 border-cyan-400 shadow-2xl my-auto">
+        <div class="inline-block px-4 py-1 bg-cyan-500/20 text-cyan-300 rounded-full text-xs sm:text-sm font-bold mb-2">🎉 Stage Clear!</div>
+        <h2 class="text-2xl sm:text-3xl font-title text-white mb-1">각성 무기 보상 선택!</h2>
+        <p class="text-slate-300 text-xs sm:text-sm mb-6">다음 단계부터 잠을 방해하는 괴물들이 나타납니다. 강력한 각성 무기를 선택하세요!</p>
 
-        // 게임 시작
-        function startGame() {
-            document.getElementById('start-screen').classList.add('hidden');
-            initLevel();
-        }
-
-        function resetGame() {
-            level = 1;
-            coins = 0;
-            mazeSize = 7;
-            unlockedCharIds = [0];
-            activeChar = allCharacters[0];
-            document.getElementById('gameover-screen').classList.add('hidden');
-            initLevel();
-        }
-
-        // 스테이지 초기화
-        function initLevel() {
-            clearInterval(timerId);
-            clearInterval(monsterIntervalId);
-            
-            timeLeft = 10;
-            document.getElementById('timer-txt').innerText = timeLeft;
-            document.getElementById('timer-txt').classList.remove('timer-low');
-            document.getElementById('level-txt').innerText = level;
-            document.getElementById('coin-txt').innerText = coins;
-
-            // 스테이지에 따른 크기 확대 (최대 15x15)
-            mazeSize = Math.min(7 + Math.floor((level - 1) / 2) * 2, 15);
-            
-            generateMaze();
-            renderMaze();
-
-            // 타이머 루프
-            timerId = setInterval(() => {
-                timeLeft--;
-                const timerTxt = document.getElementById('timer-txt');
-                timerTxt.innerText = timeLeft;
-
-                if (timeLeft <= 3) timerTxt.classList.add('timer-low');
-                if (timeLeft <= 0) gameOver("⏰ 10초 시간 초과! 식곤증이 찾아왔습니다...");
-            }, 1000);
-
-            // 괴물 이동 루프 (시간 조율 능력 적용)
-            let speed = activeChar.skill === 'time' ? 800 : 400;
-            monsterIntervalId = setInterval(moveMonsters, speed);
-        }
-
-        // DFS 미로 생성
-        function generateMaze() {
-            grid = Array.from({ length: mazeSize }, () => Array(mazeSize).fill(1));
-
-            function walk(x, y) {
-                grid[y][x] = 0;
-                const dirs = [[0, -2], [0, 2], [-2, 0], [2, 0]].sort(() => Math.random() - 0.5);
-
-                for (let [dx, dy] of dirs) {
-                    let nx = x + dx, ny = y + dy;
-                    if (nx > 0 && nx < mazeSize - 1 && ny > 0 && ny < mazeSize - 1 && grid[ny][nx] === 1) {
-                        grid[y + dy / 2][x + dx / 2] = 0;
-                        walk(nx, ny);
-                    }
-                }
-            }
-
-            walk(1, 1);
-            playerPos = { x: 1, y: 1 };
-            exitPos = { x: mazeSize - 2, y: mazeSize - 2 };
-            grid[exitPos.y][exitPos.x] = 0;
-
-            monsters = [];
-            coinList = [];
-
-            let monsterCount = Math.min(Math.floor(level / 2) + 1, 5);
-            let coinCount = Math.floor(mazeSize / 2);
-
-            for (let y = 1; y < mazeSize - 1; y++) {
-                for (let x = 1; x < mazeSize - 1; x++) {
-                    if (grid[y][x] === 0 && (x !== playerPos.x || y !== playerPos.y) && (x !== exitPos.x || y !== exitPos.y)) {
-                        if (Math.random() < 0.15 && coinCount > 0) {
-                            coinList.push({ x, y });
-                            coinCount--;
-                        } else if (Math.random() < 0.12 && monsterCount > 0 && (x > 2 || y > 2)) {
-                            monsters.push({ x, y });
-                            monsterCount--;
-                        }
-                    }
-                }
-            }
-        }
-
-        // 미로 렌더링
-        function renderMaze() {
-            const mazeDiv = document.getElementById('maze');
-            mazeDiv.style.gridTemplateColumns = `repeat(${mazeSize}, 34px)`;
-            mazeDiv.innerHTML = '';
-
-            for (let y = 0; y < mazeSize; y++) {
-                for (let x = 0; x < mazeSize; x++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-
-                    if (grid[y][x] === 1) {
-                        cell.classList.add('wall');
-                    } else {
-                        cell.classList.add('path');
-
-                        if (x === exitPos.x && y === exitPos.y) {
-                            cell.classList.add('exit');
-                            cell.innerText = '🏁';
-                        } else if (x === playerPos.x && y === playerPos.y) {
-                            cell.classList.add('player');
-                            cell.innerText = activeChar.icon;
-                        } else if (monsters.some(m => m.x === x && m.y === y)) {
-                            cell.classList.add('monster');
-                            cell.innerText = '👹';
-                        } else if (coinList.some(c => c.x === x && c.y === y)) {
-                            cell.classList.add('coin');
-                            cell.innerText = '🪙';
-                        }
-                    }
-                    mazeDiv.appendChild(cell);
-                }
-            }
-        }
-
-        // 플레이어 이동 조작
-        window.addEventListener('keydown', (e) => {
-            if (!document.getElementById('start-screen').classList.contains('hidden') ||
-                !document.getElementById('shop-screen').classList.contains('hidden') ||
-                !document.getElementById('gameover-screen').classList.contains('hidden')) return;
-
-            let dx = 0, dy = 0;
-            if (e.key === 'ArrowUp' || e.key === 'w') dy = -1;
-            if (e.key === 'ArrowDown' || e.key === 's') dy = 1;
-            if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
-            if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
-
-            if (dx !== 0 || dy !== 0) {
-                let nx = playerPos.x + dx;
-                let ny = playerPos.y + dy;
-
-                if (nx >= 0 && nx < mazeSize && ny >= 0 && ny < mazeSize && grid[ny][nx] === 0) {
-                    playerPos.x = nx;
-                    playerPos.y = ny;
-
-                    // 코인 획득
-                    coinList = coinList.filter(c => {
-                        if (c.x === playerPos.x && c.y === playerPos.y) {
-                            coins += 10;
-                            document.getElementById('coin-txt').innerText = coins;
-                            return false;
-                        }
-                        return true;
-                    });
-
-                    checkMonsterCollision();
-
-                    if (playerPos.x === exitPos.x && playerPos.y === exitPos.y) {
-                        clearLevel();
-                    }
-
-                    renderMaze();
-                }
-            }
-        });
-
-        // 괴물 랜덤 이동
-        function moveMonsters() {
-            monsters.forEach(m => {
-                const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-                const validDirs = dirs.filter(([dx, dy]) => {
-                    let nx = m.x + dx, ny = m.y + dy;
-                    return nx >= 0 && nx < mazeSize && ny >= 0 && ny < mazeSize && grid[ny][nx] === 0;
-                });
-
-                if (validDirs.length > 0) {
-                    const [dx, dy] = validDirs[Math.floor(Math.random() * validDirs.length)];
-                    m.x += dx;
-                    m.y += dy;
-                }
-            });
-
-            checkMonsterCollision();
-            renderMaze();
-        }
-
-        // 괴물 충돌 판정
-        function checkMonsterCollision() {
-            monsters.forEach((m, idx) => {
-                if (m.x === playerPos.x && m.y === playerPos.y) {
-                    if (activeChar.skill === 'kill') {
-                        monsters.splice(idx, 1);
-                    } else if (activeChar.skill !== 'stealth') {
-                        gameOver("👹 괴물에게 처단당했습니다!");
-                    }
-                }
-            });
-        }
-
-        function clearLevel() {
-            clearInterval(timerId);
-            clearInterval(monsterIntervalId);
-            coins += 15;
-            openShop();
-        }
-
-        // 상점 열기 (전체 50개 중 랜덤 3개 추첨)
-        function openShop() {
-            const shopList = document.getElementById('shop-list');
-            shopList.innerHTML = '';
-
-            // 랜덤 3개 선택 (현재 장착 중이 아닌 것 우선 포함 가능)
-            let shuffled = [...allCharacters].sort(() => Math.random() - 0.5);
-            currentShopDisplay = shuffled.slice(0, 3);
-
-            currentShopDisplay.forEach(char => {
-                const item = document.createElement('div');
-                item.classList.add('shop-item');
-
-                const isUnlocked = unlockedCharIds.includes(char.id);
-                const isEquipped = activeChar.id === char.id;
-
-                let btnHTML = '';
-                if (isEquipped) {
-                    btnHTML = `<button style="background:#444; color:#aaa; cursor:default;" disabled>장착 중</button>`;
-                } else if (isUnlocked) {
-                    btnHTML = `<button onclick="selectChar(${char.id})">선택</button>`;
-                } else {
-                    btnHTML = `<button onclick="buyChar(${char.id})">${char.cost}💰 구매</button>`;
-                }
-
-                item.innerHTML = `
-                    <div class="shop-item-info">
-                        <div class="shop-item-icon">${char.icon}</div>
-                        <div>
-                            <div><strong>${char.name}</strong> <span class="star-rank">${char.rankText}</span></div>
-                            <div style="font-size:11px; color:#bbb;">${char.desc}</div>
-                        </div>
+        <!-- 3 Weapon Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-2">
+            <!-- Item 1: Energy Bomb -->
+            <button onclick="selectItem('energy_drink')" class="glass-panel p-4 rounded-2xl hover:border-yellow-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
+                        <i class="fa-solid fa-bolt"></i>
                     </div>
-                    ${btnHTML}
-                `;
-                shopList.appendChild(item);
-            });
+                    <h3 class="font-bold text-yellow-300 text-base mb-1">고카페인 에너지폭탄</h3>
+                    <p class="text-xs text-slate-400">주변 넓은 범위의 식곤증 괴물들을 한 번에 폭파시킵니다.</p>
+                </div>
+                <span class="mt-4 text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1.5 rounded text-center font-bold">선택하기</span>
+            </button>
 
-            document.getElementById('shop-screen').classList.remove('hidden');
+            <!-- Item 2: Alarm Clock Laser -->
+            <button onclick="selectItem('alarm_laser')" class="glass-panel p-4 rounded-2xl hover:border-red-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <h3 class="font-bold text-red-300 text-base mb-1">초고음 알람 레이저</h3>
+                    <p class="text-xs text-slate-400">정면 직선상의 괴물을 먼 거리에서 소멸시킵니다.</p>
+                </div>
+                <span class="mt-4 text-xs bg-red-500/20 text-red-300 px-2 py-1.5 rounded text-center font-bold">선택하기</span>
+            </button>
+
+            <!-- Item 3: Espresso Speed Blaster -->
+            <button onclick="selectItem('espresso_shot')" class="glass-panel p-4 rounded-2xl hover:border-amber-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
+                        <i class="fa-solid fa-mug-hot"></i>
+                    </div>
+                    <h3 class="font-bold text-amber-300 text-base mb-1">진한 에스프레소 샷</h3>
+                    <p class="text-xs text-slate-400">괴물 충격파 소멸 + 이동속도를 1.5배 증가시킵니다.</p>
+                </div>
+                <span class="mt-4 text-xs bg-amber-500/20 text-amber-300 px-2 py-1.5 rounded text-center font-bold">선택하기</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 4. GAME OVER / RESULT SCREEN -->
+<div id="gameOverModal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-slate-950/95 p-4 overflow-y-auto">
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl max-w-md w-full text-center border-2 border-red-500 shadow-2xl my-auto">
+        <div class="text-6xl text-red-500 mb-3"><i class="fa-solid fa-face-dizzy animate-bounce"></i></div>
+        <h2 class="text-3xl font-title text-red-400 mb-2">식곤증 승리! (시간 초과)</h2>
+        <p class="text-slate-300 text-xs sm:text-sm mb-6 leading-relaxed">
+            10초 안에 미로를 탈출하지 못했습니다.<br>
+            눈꺼풀이 다시 무거워지고 있습니다! 🔥
+        </p>
+        <div class="bg-slate-800/80 p-4 rounded-2xl mb-6 text-left border border-slate-700">
+            <div class="flex justify-between text-sm py-1 border-b border-slate-700">
+                <span class="text-slate-400">도달 스테이지:</span>
+                <span id="resultStage" class="font-bold text-yellow-400">STAGE 1</span>
+            </div>
+            <div class="flex justify-between text-sm py-1 mt-1">
+                <span class="text-slate-400">처치한 식곤증 괴물:</span>
+                <span id="resultKills" class="font-bold text-cyan-400">0 마리</span>
+            </div>
+        </div>
+
+        <button onclick="restartGame()" class="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-title text-xl rounded-2xl shadow-lg active:scale-95 transition">
+            <i class="fa-solid fa-rotate-right"></i> 다시 찬물 끼얹고 도전!
+        </button>
+    </div>
+</div>
+
+<!-- Three.js Canvas Container -->
+<div id="canvasContainer" class="w-full h-full"></div>
+
+<script>
+    // --- GAME STATE VARIABLES ---
+    let drowsinessLevel = 5;
+    let currentStage = 1;
+    let timeRemaining = 10.0;
+    let isGameActive = false;
+    let monsterKills = 0;
+    let activeWeapon = null; // 'energy_drink', 'alarm_laser', 'espresso_shot'
+    let speedBoostTimer = 0;
+
+    // Maze Dimensions & Cell parameters
+    let mazeRows = 7;
+    let mazeCols = 7;
+    const CELL_SIZE = 4;
+    let mazeGrid = [];
+
+    // Three.js Core Objects
+    let scene, camera, renderer;
+    let playerMesh, playerLight;
+    let exitPortalMesh;
+    let mazeWallsGroup, monsterGroup, itemFxGroup;
+    let clock = new THREE.Clock();
+
+    // Controls State
+    const keys = { KeyW: false, KeyS: false, KeyA: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    let touchState = { up: false, down: false, left: false, right: false };
+    let playerPos = { x: 0, z: 0 };
+
+    // Monster Array
+    let monsters = [];
+
+    document.getElementById('drowsinessSlider').addEventListener('input', (e) => {
+        drowsinessLevel = parseInt(e.target.value);
+        document.getElementById('surveyValText').innerText = `Lv. ${drowsinessLevel}`;
+        
+        let desc = "";
+        let size = Math.min(15, 5 + Math.floor(drowsinessLevel * 0.8));
+        if (size % 2 === 0) size++;
+        if (drowsinessLevel <= 3) desc = `📌 난이도: 쉬움 (${size}x${size}) | 1단계 괴물 없음`;
+        else if (drowsinessLevel <= 7) desc = `📌 난이도: 보통 (${size}x${size}) | 1단계 괴물 없음`;
+        else desc = `📌 난이도: 매운맛 (${size}x${size}) | 빠르게 달리지 않으면 타임오버!`;
+        document.getElementById('surveyDesc').innerText = desc;
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+        audio.init();
+        audio.playWakeUpAlarm();
+        document.getElementById('surveyScreen').classList.add('hidden');
+        document.getElementById('gameHUD').classList.remove('hidden');
+        initThreeJS();
+        startStage(1);
+    });
+
+    document.getElementById('attackBtn').addEventListener('click', () => {
+        useActiveWeapon();
+    });
+
+    // Touch D-Pad setup
+    const setupTouchBtn = (id, keyName) => {
+        const btn = document.getElementById(id);
+        if(!btn) return;
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); touchState[keyName] = true; });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); touchState[keyName] = false; });
+        btn.addEventListener('mousedown', () => { touchState[keyName] = true; });
+        btn.addEventListener('mouseup', () => { touchState[keyName] = false; });
+    };
+    setupTouchBtn('btnUp', 'up');
+    setupTouchBtn('btnDown', 'down');
+    setupTouchBtn('btnLeft', 'left');
+    setupTouchBtn('btnRight', 'right');
+
+    window.addEventListener('keydown', (e) => {
+        if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
+        if (e.code === 'Space') {
+            e.preventDefault();
+            useActiveWeapon();
         }
+    });
 
-        function buyChar(id) {
-            const char = allCharacters.find(c => c.id === id);
-            if (coins >= char.cost) {
-                coins -= char.cost;
-                unlockedCharIds.push(id);
-                selectChar(id);
-            } else {
-                alert("💰 코인이 부족합니다!");
+    window.addEventListener('keyup', (e) => {
+        if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
+    });
+
+    function initThreeJS() {
+        const container = document.getElementById('canvasContainer');
+        container.innerHTML = '';
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0f1d);
+        scene.fog = new THREE.FogExp2(0x0a0f1d, 0.04);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // Ambient Light
+        const ambientLight = new THREE.AmbientLight(0x334155, 1.2);
+        scene.add(ambientLight);
+
+        // Directional Light
+        const dirLight = new THREE.DirectionalLight(0xf59e0b, 1.0);
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        scene.add(dirLight);
+
+        // Groups
+        mazeWallsGroup = new THREE.Group();
+        monsterGroup = new THREE.Group();
+        itemFxGroup = new THREE.Group();
+        scene.add(mazeWallsGroup);
+        scene.add(monsterGroup);
+        scene.add(itemFxGroup);
+
+        // Create 3D Player Character
+        create3DPlayer();
+
+        window.addEventListener('resize', onWindowResize);
+        animate();
+    }
+
+    function create3DPlayer() {
+        const playerGroup = new THREE.Group();
+
+        // Glowing Robot Body
+        const bodyGeo = new THREE.SphereGeometry(0.8, 32, 32);
+        const bodyMat = new THREE.MeshStandardMaterial({
+            color: 0x38bdf8,
+            emissive: 0x0284c7,
+            roughness: 0.2,
+            metalness: 0.8
+        });
+        const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+        bodyMesh.castShadow = true;
+        playerGroup.add(bodyMesh);
+
+        // Torus Ring Crown
+        const ringGeo = new THREE.TorusGeometry(1.0, 0.1, 16, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.rotation.x = Math.PI / 2;
+        playerGroup.add(ringMesh);
+
+        // Point Light for Player
+        playerLight = new THREE.PointLight(0x38bdf8, 2.5, 15);
+        playerLight.position.set(0, 1, 0);
+        playerGroup.add(playerLight);
+
+        playerMesh = playerGroup;
+        scene.add(playerMesh);
+    }
+
+    function generateMazeData(rows, cols) {
+        const r = rows % 2 === 0 ? rows + 1 : rows;
+        const c = cols % 2 === 0 ? cols + 1 : cols;
+        const grid = Array.from({ length: r }, () => Array(c).fill(1));
+
+        function carve(x, y) {
+            grid[x][y] = 0;
+            const dirs = [
+                [0, -2], [0, 2], [-2, 0], [2, 0]
+            ].sort(() => Math.random() - 0.5);
+
+            for (let [dx, dy] of dirs) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx > 0 && nx < r - 1 && ny > 0 && ny < c - 1 && grid[nx][ny] === 1) {
+                    grid[x + dx / 2][y + dy / 2] = 0;
+                    carve(nx, ny);
+                }
             }
         }
 
-        function selectChar(id) {
-            activeChar = allCharacters.find(c => c.id === id);
-            openShop();
+        carve(1, 1);
+        grid[1][1] = 0;
+        grid[r - 2][c - 2] = 0;
+        return { grid, r, c };
+    }
+
+    function build3DMaze(gridData) {
+        while(mazeWallsGroup.children.length > 0) {
+            const obj = mazeWallsGroup.children[0];
+            mazeWallsGroup.remove(obj);
         }
 
-        function nextLevel() {
-            level++;
-            document.getElementById('shop-screen').classList.add('hidden');
-            initLevel();
+        const wallGeo = new THREE.BoxGeometry(CELL_SIZE, 3.5, CELL_SIZE);
+        const wallMat = new THREE.MeshStandardMaterial({
+            color: 0x1e293b,
+            roughness: 0.4,
+            metalness: 0.5
+        });
+
+        const topEdgeGeo = new THREE.BoxGeometry(CELL_SIZE, 0.2, CELL_SIZE);
+        const topEdgeMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
+
+        // Floor Mesh
+        const floorGeo = new THREE.PlaneGeometry(gridData.r * CELL_SIZE, gridData.c * CELL_SIZE);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+        const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.set((gridData.r * CELL_SIZE)/2 - CELL_SIZE/2, -1.75, (gridData.c * CELL_SIZE)/2 - CELL_SIZE/2);
+        floorMesh.receiveShadow = true;
+        mazeWallsGroup.add(floorMesh);
+
+        for (let r = 0; r < gridData.r; r++) {
+            for (let c = 0; c < gridData.c; c++) {
+                if (gridData.grid[r][c] === 1) {
+                    const wall = new THREE.Mesh(wallGeo, wallMat);
+                    wall.position.set(r * CELL_SIZE, 0, c * CELL_SIZE);
+                    wall.castShadow = true;
+                    wall.receiveShadow = true;
+                    mazeWallsGroup.add(wall);
+
+                    const edge = new THREE.Mesh(topEdgeGeo, topEdgeMat);
+                    edge.position.set(r * CELL_SIZE, 1.8, c * CELL_SIZE);
+                    mazeWallsGroup.add(edge);
+                }
+            }
         }
 
-        function gameOver(msg) {
-            clearInterval(timerId);
-            clearInterval(monsterIntervalId);
-            document.getElementById('gameover-msg').innerText = msg;
-            document.getElementById('gameover-screen').classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
+        createExitPortal((gridData.r - 2) * CELL_SIZE, (gridData.c - 2) * CELL_SIZE);

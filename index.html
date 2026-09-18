@@ -1,6 +1,608 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
+<html lang="ko"><head><script data-bard-client-injected="true">(function(firebaseConfig, initialAuthToken, appId) {
+        window.__firebase_config = firebaseConfig;
+        window.__initial_auth_token = initialAuthToken;
+        window.__app_id = appId;
+            })("\n{\n  \"apiKey\": \"AIzaSyCqyCcs2R2e7AegGjvFAwG98wlamtbHvZY\",\n  \"authDomain\": \"bard-frontend.firebaseapp.com\",\n  \"projectId\": \"bard-frontend\",\n  \"storageBucket\": \"bard-frontend.firebasestorage.app\",\n  \"messagingSenderId\": \"175205271074\",\n  \"appId\": \"1:175205271074:web:2b7bd4d34d33bf38e6ec7b\"\n}\n","eyJhbGciOiJSUzI1NiIsImtpZCI6IjExNjRiNzdiNDMzZDdhMDAyMWI4NjE4YjhjYTU3ZTMyZGI5MWUxMTMiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0BiYXJkLWZyb250ZW5kLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwiYXVkIjoiaHR0cHM6Ly9pZGVudGl0eXRvb2xraXQuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmlkZW50aXR5LmlkZW50aXR5dG9vbGtpdC52MS5JZGVudGl0eVRvb2xraXQiLCJ1aWQiOiIxMTY3MTQ1ODcyNzc5MDAzNTI3NSIsImlzcyI6ImZpcmViYXNlLWFkbWluc2RrLWZic3ZjQGJhcmQtZnJvbnRlbmQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJjbGFpbXMiOnsiYXBwSWQiOiJjX2ViZDU5NTkyY2MwZjczZDhfZHJvd3NpbmVzc19raWxsZXJfbWF6ZS5odG1sLTkzIn0sImV4cCI6MTc4OTcxMzgxNywiaWF0IjoxNzg5NzEwMjE3LCJhbGciOiJSUzI1NiJ9.BHOQcuciutGQcY0EIIbqmLXLbo5BMY2GeXOcAkkm-MWRQ3qG4UJZnDhgEMYn5dXySDRluJV7kdeteDSew9g3PEbXS9_GeH6XesUuJZ8hCshlMa41G0raOET6y40GRMVNhXiwJU1OehWe3vF6ta8_F0sMGOiKTEFW4WJcSRNyGsBOaJxYkbC7pyjo0yluayhEyy5b33hXI6X4LrI7kLuspFFBluZJit_1o1upVKC-geXqbOwGsU8sIMDU8uvgb6KCWTcOC9JW8WTVHf7klkZQg5UzC0g3bQp_vHUbeQ9rClvxgra8NfS6yKNh7o4RJlD1U39ZUO5JK1In8s86LJ5UIg","c_ebd59592cc0f73d8_drowsiness_killer_maze.html-93")</script><script data-bard-client-injected="true">
+  document.addEventListener('input', (event) => {
+    if (event.target && (event.target.isContentEditable || event.target.hasAttribute('contenteditable'))) {
+      const clonedDoc = document.cloneNode(true);
+      const injectedScripts = clonedDoc.querySelectorAll('[data-bard-client-injected="true"]');
+      injectedScripts.forEach(el => el.remove());
+      window.parent.postMessage({
+        type: 'inlineEdit',
+        html: '<!DOCTYPE html>\n' + clonedDoc.documentElement.outerHTML
+      }, '*');
+    }
+  });
+</script><script data-bard-client-injected="true">(function(){'use strict';window.addEventListener("message",a=>{a.data&&a.data.type==="SUPPLEMENTAL_DATA_UPDATE"&&window.dispatchEvent(new CustomEvent("supplementaldataupdate",{detail:a.data.data}))});}).call(this);
+</script><script data-bard-client-injected="true">(function() {
+  const SCROLL_KEYS = new Set([
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+    ' ', 'Spacebar', 'PageUp', 'PageDown', 'Home', 'End',
+  ]);
+  const HORIZONTAL_KEYS = new Set(['ArrowLeft', 'ArrowRight']);
+
+  function isTextEntryTarget(target) {
+    if (!target) return false;
+    const tagName = target.tagName;
+    return tagName === 'INPUT' || tagName === 'TEXTAREA' ||
+        tagName === 'SELECT' || target.isContentEditable === true;
+  }
+
+  // An element absorbs the key only if it both overflows on the axis being
+  // scrolled and is configured to scroll on that axis. The cheap dimension
+  // test runs first because getComputedStyle forces a style recalc, and this
+  // runs on every keypress. Each axis is read from its own longhand: the
+  // 'overflow' shorthand serializes as two values when the axes differ, which
+  // is the common 'overflow-x: hidden; overflow-y: auto' pane.
+  function canScroll(node, horizontal) {
+    const overflows = horizontal ? node.scrollWidth > node.clientWidth
+                                 : node.scrollHeight > node.clientHeight;
+    if (!overflows) return false;
+    const style = window.getComputedStyle(node);
+    const overflow = horizontal ? style.overflowX : style.overflowY;
+    return overflow === 'auto' || overflow === 'scroll';
+  }
+
+  // Walks up from the event target so nested scrollers keep their behavior.
+  // <body> is included because pages that pin the root height make it the
+  // scroll container.
+  function hasScrollableAncestor(target, horizontal) {
+    let node = target;
+    while (node && node !== document.documentElement) {
+      if (canScroll(node, horizontal)) return true;
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  function rootCanScroll(horizontal) {
+    const scroller = document.scrollingElement || document.documentElement;
+    if (!scroller) return false;
+    // Tolerate a pixel of rounding so subpixel layouts do not look scrollable.
+    return horizontal ? scroller.scrollWidth > window.innerWidth + 1
+                      : scroller.scrollHeight > window.innerHeight + 1;
+  }
+
+  window.addEventListener('keydown', function(event) {
+    if (!SCROLL_KEYS.has(event.key)) return;
+    if (event.defaultPrevented) return;
+    // Alt and Meta turn arrows into browser history navigation, and Ctrl is
+    // reserved for shortcuts, so none of them are scroll intent.
+    if (event.altKey || event.metaKey || event.ctrlKey) return;
+
+    const target = event.target;
+    if (isTextEntryTarget(target)) return;
+
+    // Anything that can still absorb the scroll gets to keep it.
+    const horizontal = HORIZONTAL_KEYS.has(event.key);
+    if (rootCanScroll(horizontal)) return;
+    if (hasScrollableAncestor(target, horizontal)) return;
+
+    event.preventDefault();
+  }, {capture: true, passive: false});
+})();</script><script data-bard-client-injected="true">(function() {
+  // Ensure this script is executed only once
+  if (window.firebaseAuthBridgeScriptLoaded) {
+    return;
+  }
+  window.firebaseAuthBridgeScriptLoaded = true;
+
+  let nextTokenPromiseId = 0;
+
+  // Stores { resolve, reject } for ongoing token requests
+  const pendingTokenPromises = {};
+
+  // Listen for messages from the Host Application
+  window.addEventListener('message', function(event) {
+
+    const messageData = event.data;
+
+  if (messageData && messageData.type === 'RESOLVE_NEW_FIREBASE_TOKEN') {
+      const { success, token, error, promiseId } = messageData ?? {};
+      if (pendingTokenPromises[promiseId]) {
+        if (success) {
+          pendingTokenPromises[promiseId].resolve(token);
+        } else {
+          pendingTokenPromises[promiseId].reject(new Error(error || 'Token refresh failed from host.'));
+        }
+        delete pendingTokenPromises[promiseId];
+      }
+    }
+  });
+
+  // Expose a function for the Generated App to request a new Firebase token
+  window.requestNewFirebaseToken = function() {
+    const currentPromiseId = nextTokenPromiseId++;
+    const promise = new Promise((resolve, reject) => {
+      pendingTokenPromises[currentPromiseId] = { resolve, reject };
+    });
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'REQUEST_NEW_FIREBASE_TOKEN',
+        promiseId: currentPromiseId
+      }, '*');
+    } else {
+      pendingTokenPromises[currentPromiseId].reject(new Error('No parent window to request token from.'));
+      delete pendingTokenPromises[currentPromiseId];
+    }
+    return promise;
+  };
+})();</script><script data-bard-client-injected="true">
+let realOriginalGetUserMedia = null;
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  realOriginalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+}
+
+(function() {
+  if (navigator.mediaDevices && navigator.mediaDevices.__proto__) {
+    try {
+      Object.defineProperty(navigator.mediaDevices.__proto__, 'getUserMedia', {
+        get: function() {
+          return undefined; // Or throw an error
+        },
+        configurable: false
+      });
+    } catch (error) {
+      console.error("Error defining prototype getter:", error);
+    }
+  }
+})();
+
+(function() {
+  const pendingMediaResolvers = {};
+  let nextMediaPromiseId = 0;
+
+  function requestMediaPermissions(constraints) {
+    const mediaPromiseId = nextMediaPromiseId++;
+    const promise = new Promise((resolve, reject) => {
+      pendingMediaResolvers[mediaPromiseId] = (granted) => {
+        delete pendingMediaResolvers[mediaPromiseId];
+        resolve(granted);
+      };
+    });
+
+    window.parent.postMessage({
+      type: 'requestMediaPermission',
+      constraints: constraints,
+      promiseId: mediaPromiseId,
+    }, '*');
+
+    return promise;
+  }
+
+  let originalGetUserMedia = realOriginalGetUserMedia;
+
+  function interceptGetUserMedia() {
+    if (navigator.mediaDevices) {
+      Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+        value: function(constraints) {
+          return requestMediaPermissions(constraints).then((granted) => {
+            if (granted) {
+              if (originalGetUserMedia) {
+                return originalGetUserMedia(constraints);
+              } else {
+                throw new Error("Original getUserMedia not available.");
+              }
+            } else {
+              throw new DOMException('Permission denied', 'NotAllowedError');
+            }
+          });
+        },
+        writable: false,
+        configurable: false
+      });
+    }
+  }
+
+  interceptGetUserMedia();
+
+  const observer = new MutationObserver(function(mutationsList, observer) {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'reconfigured' && mutation.name === 'getUserMedia' && mutation.object === navigator.mediaDevices) {
+        interceptGetUserMedia();
+      } else if (mutation.type === 'attributes' && mutation.attributeName === 'getUserMedia' && mutation.target === navigator.mediaDevices) {
+        interceptGetUserMedia();
+      } else if (mutation.type === 'childList' && mutation.addedNodes) {
+        mutation.addedNodes.forEach(node => {
+          if (node === navigator.mediaDevices) {
+            interceptGetUserMedia();
+          }
+        });
+      }
+    }
+  });
+
+  function interceptSpeechRecognition() {
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+      return;
+    }
+
+    const OriginalSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const SpeechRecognitionWrapper = function(...args) {
+      const recognizer = new OriginalSpeechRecognition(...args);
+      const originalStart = recognizer.start.bind(recognizer);
+
+      recognizer.start = function() {
+        requestMediaPermissions({ audio: true }).then(granted => {
+          if (granted) {
+            originalStart();
+          } else {
+            const errorEvent = new SpeechRecognitionErrorEvent('error');
+            errorEvent.error = 'not-allowed'; // This is the standard error for permission denial.
+            recognizer.dispatchEvent(errorEvent);
+          }
+        });
+      };
+
+      return recognizer;
+    };
+
+    SpeechRecognitionWrapper.prototype = OriginalSpeechRecognition.prototype;
+    SpeechRecognitionWrapper.prototype.constructor = SpeechRecognitionWrapper;
+
+    if (window.SpeechRecognition) {
+      window.SpeechRecognition = SpeechRecognitionWrapper;
+    }
+    if (window.webkitSpeechRecognition) {
+      window.webkitSpeechRecognition = SpeechRecognitionWrapper;
+    }
+  }
+
+  interceptSpeechRecognition();
+
+  window.addEventListener('message', function(event) {
+    if (event.data) {
+      if (event.data.type === 'resolveMediaPermission') {
+        const { promiseId, granted } = event.data;
+        if (pendingMediaResolvers[promiseId]) {
+          pendingMediaResolvers[promiseId](granted);
+        }
+      }
+    }
+  });
+
+})();</script><script ws-interception-config="{&quot;parentOrigin&quot;:&quot;https://gemini.google.com&quot;,&quot;proxiedDomains&quot;:[]}" data-bard-client-injected="true">(function(){'use strict';var u=typeof Object.defineProperties=="function"?Object.defineProperty:function(b,d,e){if(b==Array.prototype||b==Object.prototype)return b;b[d]=e.value;return b};function v(b){b=["object"==typeof globalThis&&globalThis,b,"object"==typeof window&&window,"object"==typeof self&&self,"object"==typeof global&&global];for(var d=0;d<b.length;++d){var e=b[d];if(e&&e.Math==Math)return e}throw Error("Cannot find global object");}var w=v(this);
+function y(b,d){if(d)a:{var e=w;b=b.split(".");for(var h=0;h<b.length-1;h++){var k=b[h];if(!(k in e))break a;e=e[k]}b=b[b.length-1];h=e[b];d=d(h);d!=h&&d!=null&&u(e,b,{configurable:!0,writable:!0,value:d})}}function z(b){function d(h){return b.next(h)}function e(h){return b.throw(h)}return new Promise(function(h,k){function m(n){n.done?h(n.value):Promise.resolve(n.value).then(d,e).then(m,k)}m(b.next())})}y("globalThis",function(b){return b||w});/*
+
+ Copyright The Closure Library Authors.
+ SPDX-License-Identifier: Apache-2.0
+*/
+function A(b,d){function e(){}e.prototype=d.prototype;b.j=d.prototype;b.prototype=new e;b.prototype.constructor=b;b.h=function(h,k,m){for(var n=Array(arguments.length-2),p=2;p<arguments.length;p++)n[p-2]=arguments[p];return d.prototype[k].apply(h,n)}};function B(b,d,e="*"){function h(a){if(typeof a==="string")return F.encode(a).buffer;if(a instanceof ArrayBuffer)return a.slice(0);if(ArrayBuffer.isView(a))return a.buffer.slice(a.byteOffset,a.byteOffset+a.byteLength);throw Error("Invalid data type");}function k(a){a=h(a);var f={type:"send",data:new Uint8Array(a)},g;(g=r)==null||g.postMessage(f,[a])}function m(){if(!r)throw Error("Data port not captured yet.");r.onmessage=a=>{if(a.data.type==="message"){a=new MessageEvent("message",{data:G.decode(a.data.data)});
+let f;(f=c.onmessage)==null||f.call(c,a);c.dispatchEvent(a)}}}function n(){if(!t)throw Error("Control port not captured yet.");t.onmessage=a=>{switch(a.data.type){case "open":l=1;var f=new Event("open"),g;(g=c.onopen)==null||g.call(c,f);c.dispatchEvent(f);q.forEach(H=>{k(H)});q=[];break;case "close":g=a.data;l=3;g=new CloseEvent("close",{code:g.code,reason:g.reason,wasClean:g.wasClean});(f=c.onclose)==null||f.call(c,g);c.dispatchEvent(g);break;case "error":l=3;f=new Event("error");let x;(x=c.onerror)==
+null||x.call(c,f);c.dispatchEvent(f)}}}function p(a){return z(function*(){var f=new MessageChannel;t=f.port1;var g=new MessageChannel;r=g.port1;n();m();window.parent.postMessage({type:"websocket_open",portOrdering:["control","data"],url:b,protocols:a||[],connectionId:I},e,[f.port2,g.port2])}())}var c=Reflect.construct(EventTarget,[],new.target);c.CONNECTING=0;c.OPEN=1;c.CLOSING=2;c.CLOSED=3;c.url=b;c.binaryType="arraybuffer";c.protocol="";c.i="";var l=0,t=null,r=null,q=[],F=new TextEncoder,G=new TextDecoder;
+c.onopen=null;c.onmessage=null;c.onclose=null;c.onerror=null;Object.defineProperty(c,"readyState",{get:()=>l,enumerable:!0,configurable:!0});Object.defineProperty(c,"bufferedAmount",{get:()=>{var a=0;q.forEach(f=>{a+=typeof f==="string"?f.length:f.byteLength});return a},enumerable:!0,configurable:!0});var I=function(){var a;return((a=globalThis.crypto)==null?0:a.randomUUID)?globalThis.crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,f=>{var g=Math.random()*16|0;return(f===
+"x"?g:g&3|8).toString(16)})}();c.send=a=>{if(l===1)a instanceof Blob?a.arrayBuffer().then(f=>{k(f)}):k(a);else if(l===0)if(typeof a==="string")q.push(a);else if(a instanceof ArrayBuffer||ArrayBuffer.isView(a))q.push(h(a));else throw Error("Sending Blob is not supported before the connection is open.");else console.debug("WebSocket send called in CLOSING or CLOSED state; ignored.")};c.close=(a=1E3,f="")=>{if(l!==2&&l!==3){l=2;a={type:"close",code:a,reason:f,wasClean:a===1E3};var g;(g=t)==null||g.postMessage(a)}};
+Promise.resolve().then(()=>p(d));return c}A(B,EventTarget);var C=document.currentScript,D=C==null?void 0:C.getAttribute("ws-interception-config");if(!D)throw Error("WebSocket Interceptor: Missing ws-interception-config attribute in the script tag.");var E=JSON.parse(D);if(!E.parentOrigin||typeof E.parentOrigin!=="string")throw Error("WebSocket Interceptor: Invalid parentOrigin in ws-interception-config");
+(function(b){var d=Object.getOwnPropertyDescriptor(window,"WebSocket");if(!d||d.writable||d.configurable)d=Object.assign(function(e,h){try{let k=(new URL(e)).hostname;if(b.proxiedDomains.some(m=>k===m||k.endsWith(`.${m}`)))return new B(e,h,b.parentOrigin)}catch(k){throw window.parent.postMessage({type:"websocket_blocked",url:e,reason:"blocked_invalid_url"},b.parentOrigin),new DOMException(`WebSocket connection to '${e}' is not allowed in Canvas.`,"SecurityError");}window.parent.postMessage({type:"websocket_blocked",
+url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMException(`WebSocket connection to '${e}' is not allowed in Canvas.`,"SecurityError");},{CONNECTING:0,OPEN:1,CLOSING:2,CLOSED:3}),Object.defineProperty(window,"WebSocket",{value:d,writable:!1,configurable:!1})})({proxiedDomains:E.proxiedDomains||[],parentOrigin:E.parentOrigin});}).call(this);
+</script><script data-bard-client-injected="true">((function(modelInformation) {
+  const originalFetch = window.fetch;
+  // TODO: b/421908508 - Move these out of the script and match all generative AI model calls.
+  let googleLlmBaseApiUrls = [
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':streamGenerateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predictLongRunning',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageEditModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageTransformModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predictLongRunning',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.ttsModelName + ':generateContent',
+  ];
+  modelInformation.deprecatedTextModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+    );
+  });
+  modelInformation.deprecatedImageModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predict',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predictLongRunning',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+  modelInformation.deprecatedGenerateImageModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+  modelInformation.deprecatedImageTransformModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+
+  const pendingFetchResolvers = {};
+  let nextPromiseId = 0;
+
+  function handleStringInput(input, optionsArgument) {
+    const actualUrl = input;
+    const fetchCallArgs = [actualUrl, optionsArgument];
+    const effectiveOptions = optionsArgument || {};
+    const bodyForApiKeyCheck = effectiveOptions.body;
+    const bodyForPostMessage = effectiveOptions.body;
+    return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+  }
+
+  function handleRequestInput(input, optionsArgument) {
+    const actualUrl = input.url;
+    const fetchCallArgs = [input, optionsArgument];
+    const effectiveOptions = { method: input.method, headers: new Headers(input.headers) };
+    let bodyForApiKeyCheck;
+    let bodyForPostMessage;
+
+    if (optionsArgument) {
+      if (optionsArgument.method) effectiveOptions.method = optionsArgument.method;
+      if (optionsArgument.headers) effectiveOptions.headers = new Headers(optionsArgument.headers);
+      if ('body' in optionsArgument) {
+        bodyForApiKeyCheck = optionsArgument.body;
+        bodyForPostMessage = optionsArgument.body;
+      } else {
+        bodyForApiKeyCheck = undefined;
+        bodyForPostMessage = input.body;
+      }
+    } else {
+      bodyForApiKeyCheck = undefined;
+      bodyForPostMessage = input.body;
+    }
+    return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+  }
+
+  window.fetch = function(input, optionsArgument) {
+    let actualUrl;
+    let fetchCallArgs;
+    let effectiveOptions = {};
+    let bodyForApiKeyCheck;
+    let bodyForPostMessage;
+
+    if (typeof input === 'string') {
+      ({actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage} = handleStringInput(input, optionsArgument));
+    } else if (input instanceof Request) {
+      ({actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage} = handleRequestInput(input, optionsArgument));
+    } else {
+      return originalFetch.apply(window, [input, optionsArgument]);
+    }
+
+    effectiveOptions.method = effectiveOptions.method || 'GET';
+    if (!effectiveOptions.headers) {
+      effectiveOptions.headers = new Headers();
+    }
+
+
+    if (typeof actualUrl === 'string' && googleLlmBaseApiUrls.some((url) => actualUrl.startsWith(url))) {
+      let apiKeyIsNull = true;
+
+      const regex = new RegExp("models/([^:]+)");
+      const modelNameMatch = actualUrl.match(regex);
+      const modelName = modelNameMatch ? modelNameMatch[1] : 'unspecified';
+
+
+      try {
+        const urlObject = new URL(actualUrl);  // Use URL object for robust parsing
+        const apiKeyParam = urlObject.searchParams.get('key');
+        if (apiKeyParam) {
+          apiKeyIsNull = false;
+        }
+      } catch (e) {
+        // Continue checks even if URL parsing fails
+      }
+
+      if (apiKeyIsNull && effectiveOptions.headers) {
+        const h = new Headers(effectiveOptions.headers);
+        const apiKeyHeaderValue = h.get('X-API-Key') || h.get('x-api-key');
+        if (apiKeyHeaderValue) {
+          apiKeyIsNull = false;
+          return originalFetch.apply(window, fetchCallArgs);
+        }
+      }
+
+      if (apiKeyIsNull && effectiveOptions.method && ['POST', 'PUT', 'PATCH'].includes(effectiveOptions.method.toUpperCase()) && typeof bodyForApiKeyCheck === 'string') {
+        try {
+          const bodyData = JSON.parse(bodyForApiKeyCheck);
+          if (bodyData && bodyData.apiKey) {
+            apiKeyIsNull = false;
+            return originalFetch.apply(window, fetchCallArgs);
+          }
+        } catch (e) {
+          // Ignore JSON parsing errors
+        }
+      }
+
+      if(apiKeyIsNull) {
+        const promiseId = nextPromiseId++;
+        const promise = new Promise((resolve) => {
+          pendingFetchResolvers[promiseId] = (resolvedResponse) => {
+            delete pendingFetchResolvers[promiseId];
+            resolve(resolvedResponse);
+          };
+        });
+
+        let serializedBodyForPostMessage;
+        if (typeof bodyForPostMessage === 'string' || bodyForPostMessage == null) {
+            serializedBodyForPostMessage = bodyForPostMessage;
+        } else if (bodyForPostMessage instanceof ReadableStream) {
+            serializedBodyForPostMessage = null;
+        } else {
+            try {
+                serializedBodyForPostMessage = JSON.stringify(bodyForPostMessage);
+            } catch (e) {
+                serializedBodyForPostMessage = null;
+            }
+        }
+
+        const messageOptions = {
+            method: effectiveOptions.method,
+            headers: Object.fromEntries(new Headers(effectiveOptions.headers).entries()),
+            body: serializedBodyForPostMessage
+        };
+
+        window.parent.postMessage({
+          type: 'requestFetch',
+          url: actualUrl,
+          modelName: modelName,
+          options: messageOptions,
+          promiseId: promiseId,
+        }, '*');
+
+        return promise;
+      }
+      return originalFetch.apply(window, fetchCallArgs);
+    }
+    return originalFetch.apply(window, fetchCallArgs);
+  };
+
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'resolveFetch') {
+      const { promiseId, response } = event.data;
+      if (pendingFetchResolvers[promiseId]) {
+        try {
+          const reconstructedResponse = new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: new Headers(response.headers),
+          });
+          pendingFetchResolvers[promiseId](reconstructedResponse);
+        } catch (error) {
+          pendingFetchResolvers[promiseId](new Response(null, { status: 500, statusText: "Interceptor Response Reconstruction Error" }));
+        }
+      }
+    }
+  });
+
+}))({"textModelName":"gemini-3-flash-preview","imageModelName":"imagen-4.0-generate-001","imageEditModelName":"gemini-3.1-flash-image","imageTransformModelName":"gemini-3-pro-image","videoModelName":"veo-2.0-generate-001","ttsModelName":"gemini-2.5-flash-preview-tts","deprecatedTextModelNames":["gemini-2.0-flash","gemini-2.5-flash","gemini-2.5-flash-preview-04-17","gemini-2.5-flash-preview-05-20","gemini-2.5-flash-preview-09-2025"],"deprecatedImageModelNames":["imagen-3.0-generate-001","imagen-3.0-generate-002"],"deprecatedGenerateImageModelNames":["gemini-2.5-flash-image-preview","gemini-2.5-flash-image","gemini-3.1-flash-image-preview"],"deprecatedImageTransformModelNames":["gemini-3-pro-image-preview-11-2025"]})</script><script data-bard-client-injected="true">(function(){'use strict';function a(){window.parent.postMessage({type:"interaction"},"*")}window.addEventListener("click",a,{capture:!0,passive:!0});window.addEventListener("touchstart",a,{capture:!0,passive:!0});window.addEventListener("keydown",a,{capture:!0,passive:!0});}).call(this);
+</script><script data-bard-client-injected="true">(function() {
+  const originalConsoleLog = console.log;
+  const originalConsoleError = console.error;
+
+    /**
+   * Normalizes an error event or a promise rejection reason into a structured error object.
+   * @param {*} errorEventOrReason The error object or reason.
+   * @return {object} Structured error data { message, name, stack }.
+   */
+  function getErrorObject(errorEventOrReason) {
+    if (errorEventOrReason instanceof Error) {
+      return {
+        message: errorEventOrReason.message,
+        name: errorEventOrReason.name,
+        stack: errorEventOrReason.stack,
+      };
+    }
+    // Fallback for non-Error objects.
+    try {
+      return {
+        message: JSON.stringify(errorEventOrReason),
+        name: 'UnknownErrorType',
+        stack: null,
+      };
+    } catch (e) {
+      return {
+        message: String(errorEventOrReason),
+        name: 'UnknownErrorTypeNonStringifiable',
+        stack: null,
+      };
+    }
+  }
+
+  /**
+   * Converts an array of arguments (from log/error) into a single string.
+   * Handles Error objects specially to include their message and stack.
+   * @param {Array<*>} args - Arguments passed to console methods.
+   * @return {string} A string representation of the arguments.
+   */
+  function stringifyArgs(args) {
+    return args
+      .map((arg) => {
+        if (arg instanceof Error) {
+          const {message, stack} = arg;
+          return `Error: ${message}${stack ? ('\nStack: ' + stack) : ''}`;
+        }
+        if (typeof arg === 'object' && arg !== null) {
+          try {
+            return JSON.stringify(arg);
+          } catch (error) {
+            return '[Circular Object]';
+          }
+        } else {
+          return String(arg);
+        }
+      })
+      .join(' ');
+  }
+
+  console.log = function(...args) {
+    const logString = stringifyArgs(args);
+    window.parent.postMessage({ type: 'log', message: logString }, '*');
+    originalConsoleLog.apply(console, args);
+  };
+
+  console.error = function(...args) {
+    let errorData;
+    if (args.length > 0 && args[0] instanceof Error) {
+      const err = args[0];
+      // If the first arg is an Error, capture its details.
+      errorData = {
+        type: 'error',
+        source: 'CONSOLE_ERROR',
+        ...getErrorObject(err),
+        rawArgsString: stringifyArgs(args.slice(1)),
+        timestamp: new Date().toISOString(),
+      };
+    } else {
+      // If not an Error object, treat all args as a general error message.
+      errorData = {
+        type: 'error',
+        source: 'CONSOLE_ERROR',
+        message: stringifyArgs(args),
+        name: 'ConsoleLoggedError',
+        stack: null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    window.parent.postMessage(errorData, '*');
+    originalConsoleError.apply(console, args);
+  };
+
+  // Listen for global unhandled synchronous errors.
+  window.addEventListener('error', function(event) {
+    const errorDetails = event.error ? getErrorObject(event.error) : {
+      message: event.message,
+      name: 'GlobalError',
+      stack: null,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    };
+
+    window.parent.postMessage({
+      type: 'error',
+      source: 'global',
+      ...errorDetails,
+      message: errorDetails.message || event.message,
+      timestamp: new Date().toISOString(),
+    }, '*');
+  });
+
+  // Listen for unhandled promise rejections (asynchronous errors).
+  window.addEventListener('unhandledrejection', function(event) {
+    const errorDetails = getErrorObject(event.reason);
+
+    window.parent.postMessage({
+      type: 'error',
+      source: 'unhandledrejection',
+      ...errorDetails,
+      message: errorDetails.message || 'Unhandled Promise Rejection',
+      timestamp: new Date().toISOString(),
+    }, '*');
+  });
+
+})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>⚡ 식곤증 타파! 10초 3D 미로 탈출 ⚡</title>
@@ -9,9 +611,9 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Three.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
     <!-- Canvas Confetti -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" crossorigin="anonymous"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap');
         body {
@@ -19,6 +621,7 @@
             touch-action: manipulation;
             overflow: hidden;
             user-select: none;
+            background-color: #020617;
         }
         .font-title {
             font-family: 'Black Han Sans', sans-serif;
@@ -28,14 +631,13 @@
         }
         @keyframes pulse-red {
             0% { transform: scale(1); color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
-            100% { transform: scale(1.15); color: #f87171; text-shadow: 0 0 25px rgba(248, 113, 113, 1); }
+            100% { transform: scale(1.12); color: #f87171; text-shadow: 0 0 25px rgba(248, 113, 113, 1); }
         }
         .glass-panel {
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.90);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
-        /* Touch Virtual D-Pad Styling */
         .dpad-btn {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
@@ -46,14 +648,41 @@
             justify-content: center;
             border-radius: 12px;
             font-size: 1.25rem;
+            cursor: pointer;
         }
         .dpad-btn:active {
             background: rgba(250, 204, 21, 0.4);
             transform: scale(0.92);
         }
+        /* Toast animation */
+        #copyToast {
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        #copyToast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+        #copyToast.hide {
+            opacity: 0;
+            transform: translate(-50%, -20px);
+        }
     </style>
-</head>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.pointer-events-auto{pointer-events:auto}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.left-1\/2{left:50%}.right-3{right:0.75rem}.top-16{top:4rem}.top-3{top:0.75rem}.-right-10{right:-2.5rem}.-top-10{top:-2.5rem}.z-40{z-index:40}.z-50{z-index:50}.z-10{z-index:10}.z-30{z-index:30}.my-auto{margin-top:auto;margin-bottom:auto}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-6{margin-bottom:1.5rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-3{margin-top:0.75rem}.mt-4{margin-top:1rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-screen{height:100vh}.h-12{height:3rem}.h-16{height:4rem}.h-3{height:0.75rem}.h-32{height:8rem}.h-36{height:9rem}.h-full{height:100%}.w-screen{width:100vw}.w-12{width:3rem}.w-16{width:4rem}.w-32{width:8rem}.w-36{width:9rem}.w-full{width:100%}.max-w-2xl{max-width:42rem}.max-w-lg{max-width:32rem}.max-w-md{max-width:28rem}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.transform{transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes bounce{0%, 100%{transform:translateY(-25%);animation-timing-function:cubic-bezier(0.8,0,1,1)}50%{transform:none;animation-timing-function:cubic-bezier(0,0,0.2,1)}}.animate-bounce{animation:bounce 1s infinite}.cursor-pointer{cursor:pointer}.appearance-none{-webkit-appearance:none;appearance:none}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-1\.5{gap:0.375rem}.gap-3{gap:0.75rem}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.rounded-full{border-radius:9999px}.rounded-xl{border-radius:0.75rem}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-l-4{border-left-width:4px}.border-r-4{border-right-width:4px}.border-none{border-style:none}.border-emerald-200{--tw-border-opacity:1;border-color:rgb(167 243 208 / var(--tw-border-opacity, 1))}.border-emerald-300\/40{border-color:rgb(110 231 183 / 0.4)}.border-cyan-400{--tw-border-opacity:1;border-color:rgb(34 211 238 / var(--tw-border-opacity, 1))}.border-red-500{--tw-border-opacity:1;border-color:rgb(239 68 68 / var(--tw-border-opacity, 1))}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85 / var(--tw-border-opacity, 1))}.border-white\/40{border-color:rgb(255 255 255 / 0.4)}.border-yellow-400{--tw-border-opacity:1;border-color:rgb(250 204 21 / var(--tw-border-opacity, 1))}.border-yellow-600\/30{border-color:rgb(202 138 4 / 0.3)}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129 / var(--tw-bg-opacity, 1))}.bg-slate-950{--tw-bg-opacity:1;background-color:rgb(2 6 23 / var(--tw-bg-opacity, 1))}.bg-amber-500\/20{background-color:rgb(245 158 11 / 0.2)}.bg-cyan-500\/20{background-color:rgb(6 182 212 / 0.2)}.bg-red-500\/20{background-color:rgb(239 68 68 / 0.2)}.bg-slate-700{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.bg-slate-800\/40{background-color:rgb(30 41 59 / 0.4)}.bg-slate-800\/60{background-color:rgb(30 41 59 / 0.6)}.bg-slate-800\/80{background-color:rgb(30 41 59 / 0.8)}.bg-slate-900\/90{background-color:rgb(15 23 42 / 0.9)}.bg-slate-900\/95{background-color:rgb(15 23 42 / 0.95)}.bg-slate-950\/90{background-color:rgb(2 6 23 / 0.9)}.bg-slate-950\/95{background-color:rgb(2 6 23 / 0.95)}.bg-yellow-400{--tw-bg-opacity:1;background-color:rgb(250 204 21 / var(--tw-bg-opacity, 1))}.bg-yellow-500\/20{background-color:rgb(234 179 8 / 0.2)}.bg-yellow-950\/40{background-color:rgb(66 32 6 / 0.4)}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.from-emerald-500{--tw-gradient-from:#10b981 var(--tw-gradient-from-position);--tw-gradient-to:rgb(16 185 129 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-red-500{--tw-gradient-from:#ef4444 var(--tw-gradient-from-position);--tw-gradient-to:rgb(239 68 68 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-yellow-300{--tw-gradient-from:#fde047 var(--tw-gradient-from-position);--tw-gradient-to:rgb(253 224 71 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-yellow-500{--tw-gradient-from:#eab308 var(--tw-gradient-from-position);--tw-gradient-to:rgb(234 179 8 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.via-orange-400{--tw-gradient-to:rgb(251 146 60 / 0)  var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #fb923c var(--tw-gradient-via-position), var(--tw-gradient-to)}.via-orange-500{--tw-gradient-to:rgb(249 115 22 / 0)  var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #f97316 var(--tw-gradient-via-position), var(--tw-gradient-to)}.to-teal-600{--tw-gradient-to:#0d9488 var(--tw-gradient-to-position)}.to-orange-500{--tw-gradient-to:#f97316 var(--tw-gradient-to-position)}.to-orange-600{--tw-gradient-to:#ea580c var(--tw-gradient-to-position)}.to-red-500{--tw-gradient-to:#ef4444 var(--tw-gradient-to-position)}.bg-clip-text{-webkit-background-clip:text;background-clip:text}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-4{padding-top:1rem;padding-bottom:1rem}.pr-28{padding-right:7rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.text-base{font-size:1rem;line-height:1.5rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-5xl{font-size:3rem;line-height:1}.text-6xl{font-size:3.75rem;line-height:1}.text-\[10px\]{font-size:10px}.text-xl{font-size:1.25rem;line-height:1.75rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-normal{font-weight:400}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.tracking-wider{letter-spacing:0.05em}.text-slate-950{--tw-text-opacity:1;color:rgb(2 6 23 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36 / var(--tw-text-opacity, 1))}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-red-300{--tw-text-opacity:1;color:rgb(252 165 165 / var(--tw-text-opacity, 1))}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68 / var(--tw-text-opacity, 1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225 / var(--tw-text-opacity, 1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184 / var(--tw-text-opacity, 1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.text-transparent{color:transparent}.text-yellow-200{--tw-text-opacity:1;color:rgb(254 240 138 / var(--tw-text-opacity, 1))}.text-yellow-300{--tw-text-opacity:1;color:rgb(253 224 71 / var(--tw-text-opacity, 1))}.text-yellow-400{--tw-text-opacity:1;color:rgb(250 204 21 / var(--tw-text-opacity, 1))}.accent-yellow-400{accent-color:#facc15}.opacity-30{opacity:0.3}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.blur-3xl{--tw-blur:blur(64px);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:-translate-y-1:hover{--tw-translate-y:-0.25rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-amber-400:hover{--tw-border-opacity:1;border-color:rgb(251 191 36 / var(--tw-border-opacity, 1))}.hover\:border-red-400:hover{--tw-border-opacity:1;border-color:rgb(248 113 113 / var(--tw-border-opacity, 1))}.hover\:border-yellow-400:hover{--tw-border-opacity:1;border-color:rgb(250 204 21 / var(--tw-border-opacity, 1))}.hover\:bg-slate-800:hover{--tw-bg-opacity:1;background-color:rgb(30 41 59 / var(--tw-bg-opacity, 1))}.hover\:from-emerald-400:hover{--tw-gradient-from:#34d399 var(--tw-gradient-from-position);--tw-gradient-to:rgb(52 211 153 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:from-red-400:hover{--tw-gradient-from:#f87171 var(--tw-gradient-from-position);--tw-gradient-to:rgb(248 113 113 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:from-yellow-400:hover{--tw-gradient-from:#facc15 var(--tw-gradient-from-position);--tw-gradient-to:rgb(250 204 21 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:to-teal-500:hover{--tw-gradient-to:#14b8a6 var(--tw-gradient-to-position)}.hover\:to-orange-400:hover{--tw-gradient-to:#fb923c var(--tw-gradient-to-position)}.hover\:to-red-400:hover{--tw-gradient-to:#f87171 var(--tw-gradient-to-position)}.active\:scale-95:active{--tw-scale-x:.95;--tw-scale-y:.95;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-90:active{--tw-scale-x:.9;--tw-scale-y:.9;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.group:hover .group-hover\:scale-110{--tw-scale-x:1.1;--tw-scale-y:1.1;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@media (min-width: 640px){.sm\:right-4{right:1rem}.sm\:top-4{top:1rem}.sm\:block{display:block}.sm\:hidden{display:none}.sm\:h-20{height:5rem}.sm\:w-20{width:5rem}.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.sm\:gap-4{gap:1rem}.sm\:p-6{padding:1.5rem}.sm\:p-8{padding:2rem}.sm\:px-4{padding-left:1rem;padding-right:1rem}.sm\:py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.sm\:px-5{padding-left:1.25rem;padding-right:1.25rem}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}.sm\:py-2{padding-top:0.5rem;padding-bottom:0.5rem}.sm\:py-3{padding-top:0.75rem;padding-bottom:0.75rem}.sm\:pr-32{padding-right:8rem}.sm\:text-base{font-size:1rem;line-height:1.5rem}.sm\:text-sm{font-size:0.875rem;line-height:1.25rem}.sm\:text-2xl{font-size:1.5rem;line-height:2rem}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}.sm\:text-4xl{font-size:2.25rem;line-height:2.5rem}.sm\:text-5xl{font-size:3rem;line-height:1}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}.sm\:text-xs{font-size:0.75rem;line-height:1rem}}</style></head>
 <body class="bg-slate-950 text-white w-screen h-screen relative overflow-hidden">
+
+<!-- Top Right Fixed Header with Copy Code Button -->
+<header class="absolute top-3 right-3 sm:top-4 sm:right-4 z-40 flex items-center gap-2">
+    <button id="copyCodeBtn" type="button" class="px-3.5 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl shadow-lg border border-emerald-300/40 flex items-center gap-2 text-xs sm:text-sm active:scale-95 transition cursor-pointer">
+        <i class="fa-solid fa-copy text-sm sm:text-base"></i>
+        <span>코드 복사</span>
+    </button>
+</header>
+
+<!-- Copy Toast Notification -->
+<div id="copyToast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-slate-950 px-5 py-2.5 rounded-full font-bold shadow-2xl flex items-center gap-2 text-xs sm:text-sm border border-emerald-200 pointer-events-none show">
+    <i class="fa-solid fa-circle-check text-base"></i>
+    <span>전체 HTML 코드가 클립보드에 복사되었습니다!</span>
+</div>
 
 <script>
     class AudioEngine {
@@ -61,141 +690,154 @@
             this.ctx = null;
         }
         
-        init() {
-            if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
+        async init() {
+            try {
+                if (!this.ctx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        this.ctx = new AudioContextClass();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    await this.ctx.resume();
+                }
+            } catch (err) {
+                console.warn("AudioContext init skipped/failed:", err);
             }
         }
 
-        // Timer Urgent Tick
         playTick(isUrgent = false) {
-            if (!this.ctx) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = isUrgent ? 'sawtooth' : 'sine';
-            osc.frequency.setValueAtTime(isUrgent ? 880 : 440, this.ctx.currentTime);
-            
-            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
-
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.15);
-        }
-
-        // Loud High-Pitched Alarm to Shock User Awake
-        playWakeUpAlarm() {
-            if (!this.ctx) return;
-            const now = this.ctx.currentTime;
-            for (let i = 0; i < 4; i++) {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            try {
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(1000 + i * 200, now + i * 0.08);
+                osc.type = isUrgent ? 'sawtooth' : 'sine';
+                osc.frequency.setValueAtTime(isUrgent ? 880 : 440, this.ctx.currentTime);
                 
-                gain.gain.setValueAtTime(0.5, now + i * 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.07);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
 
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
-                osc.start(now + i * 0.08);
-                osc.stop(now + i * 0.08 + 0.07);
-            }
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            } catch(e) {}
         }
 
-        // Attack Laser Beam Sound
+        playWakeUpAlarm() {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            try {
+                const now = this.ctx.currentTime;
+                for (let i = 0; i < 5; i++) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(800 + i * 300, now + i * 0.07);
+                    
+                    gain.gain.setValueAtTime(0.4, now + i * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.07 + 0.08);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.07);
+                    osc.stop(now + i * 0.07 + 0.08);
+                }
+            } catch(e) {}
+        }
+
         playLaser() {
-            if (!this.ctx) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(900, this.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.2);
-
-            gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
-
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.2);
-        }
-
-        // Monster Death Explosion
-        playExplosion() {
-            if (!this.ctx) return;
-            const now = this.ctx.currentTime;
-            const bufferSize = this.ctx.sampleRate * 0.3;
-            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
-            }
-            
-            const noise = this.ctx.createBufferSource();
-            noise.buffer = buffer;
-
-            const filter = this.ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(800, now);
-            filter.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-
-            const gain = this.ctx.createGain();
-            gain.gain.setValueAtTime(0.6, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.ctx.destination);
-
-            noise.start(now);
-            noise.stop(now + 0.3);
-        }
-
-        // Stage Victory Sound Effect
-        playVictory() {
-            if (!this.ctx) return;
-            const now = this.ctx.currentTime;
-            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
-            notes.forEach((freq, idx) => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
-
-                gain.gain.setValueAtTime(0.4, now + idx * 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now + idx * 0.08);
-                osc.stop(now + idx * 0.08 + 0.25);
-            });
-        }
-
-        // Fail / Game Over Sound
-        playFail() {
-            if (!this.ctx) return;
-            const now = this.ctx.currentTime;
-            const notes = [440, 370, 310, 220];
-            notes.forEach((freq, idx) => {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            try {
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                osc.frequency.setValueAtTime(900, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.2);
 
-                gain.gain.setValueAtTime(0.3, now + idx * 0.12);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.15);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
 
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
-                osc.start(now + idx * 0.12);
-                osc.stop(now + idx * 0.12 + 0.15);
-            });
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            } catch(e) {}
+        }
+
+        playExplosion() {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            try {
+                const now = this.ctx.currentTime;
+                const bufferSize = this.ctx.sampleRate * 0.25;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+                filter.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                noise.start(now);
+                noise.stop(now + 0.25);
+            } catch(e) {}
+        }
+
+        playVictory() {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            try {
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+                    gain.gain.setValueAtTime(0.35, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.25);
+                });
+            } catch(e) {}
+        }
+
+        playFail() {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            try {
+                const now = this.ctx.currentTime;
+                const notes = [440, 370, 310, 220];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+                    gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.15);
+                });
+            } catch(e) {}
         }
     }
 
@@ -203,9 +845,9 @@
 </script>
 
 <!-- 1. SURVEY / INITIAL SCREEN -->
-<div id="surveyScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 p-4 overflow-y-auto">
+<div id="surveyScreen" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/95 p-4 overflow-y-auto">
     <div class="glass-panel p-6 sm:p-8 rounded-3xl max-w-lg w-full text-center border-2 border-yellow-400 shadow-2xl relative overflow-hidden my-auto">
-        <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400 rounded-full blur-3xl opacity-30"></div>
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400 rounded-full blur-3xl opacity-30 pointer-events-none"></div>
         <div class="text-5xl mb-3 text-yellow-400"><i class="fa-solid fa-bolt-lightning animate-bounce"></i></div>
         <h1 class="text-3xl sm:text-4xl font-title text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 mb-2">
             식곤증 타파! 10초 미로
@@ -232,7 +874,7 @@
             </div>
         </div>
 
-        <button id="startBtn" class="w-full py-4 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 hover:from-yellow-400 hover:to-red-400 text-slate-950 font-title text-2xl rounded-2xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
+        <button id="startBtn" type="button" class="w-full py-4 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 hover:from-yellow-400 hover:to-red-400 text-slate-950 font-title text-2xl rounded-2xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3 cursor-pointer">
             <i class="fa-solid fa-play"></i> 각성 미로 시작하기!
         </button>
     </div>
@@ -241,7 +883,7 @@
 <!-- 2. GAME HUD UI (In-Game Overlay) -->
 <div id="gameHUD" class="hidden absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-3 sm:p-6">
     <!-- Top Header HUD -->
-    <div class="flex justify-between items-start w-full gap-2">
+    <div class="flex justify-between items-start w-full gap-2 pr-28 sm:pr-32">
         <!-- Stage Info -->
         <div class="glass-panel px-4 py-2 sm:px-5 sm:py-3 rounded-2xl pointer-events-auto border-l-4 border-yellow-400 shadow-md">
             <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold">STAGE</div>
@@ -270,13 +912,13 @@
         <!-- Mobile Touch Virtual D-Pad -->
         <div class="sm:hidden grid grid-cols-3 gap-1.5 w-36 h-36">
             <div></div>
-            <button id="btnUp" class="dpad-btn"><i class="fa-solid fa-chevron-up"></i></button>
+            <button id="btnUp" type="button" class="dpad-btn"><i class="fa-solid fa-chevron-up"></i></button>
             <div></div>
-            <button id="btnLeft" class="dpad-btn"><i class="fa-solid fa-chevron-left"></i></button>
-            <div class="dpad-btn bg-slate-800/40 border-none"><i class="fa-solid fa-gamepad text-slate-500 text-sm"></i></div>
-            <button id="btnRight" class="dpad-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="btnLeft" type="button" class="dpad-btn"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="dpad-btn bg-slate-800/40 border-none pointer-events-none"><i class="fa-solid fa-gamepad text-slate-500 text-sm"></i></div>
+            <button id="btnRight" type="button" class="dpad-btn"><i class="fa-solid fa-chevron-right"></i></button>
             <div></div>
-            <button id="btnDown" class="dpad-btn"><i class="fa-solid fa-chevron-down"></i></button>
+            <button id="btnDown" type="button" class="dpad-btn"><i class="fa-solid fa-chevron-down"></i></button>
             <div></div>
         </div>
 
@@ -287,7 +929,7 @@
         </div>
 
         <!-- Attack Button for Mobile / Screen Click -->
-        <button id="attackBtn" class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-500 to-orange-600 rounded-full shadow-2xl flex flex-col items-center justify-center text-xl sm:text-2xl text-white active:scale-90 border-2 border-white/40 font-bold">
+        <button id="attackBtn" type="button" class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-500 to-orange-600 rounded-full shadow-2xl flex flex-col items-center justify-center text-xl sm:text-2xl text-white active:scale-90 border-2 border-white/40 font-bold cursor-pointer">
             <i class="fa-solid fa-gun"></i>
             <span class="text-[10px] font-normal">공격</span>
         </button>
@@ -295,7 +937,7 @@
 </div>
 
 <!-- 3. ITEM SELECTION MODAL (Between Stages) -->
-<div id="itemModal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 overflow-y-auto">
+<div id="itemModal" class="hidden absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 p-4 overflow-y-auto">
     <div class="glass-panel p-6 sm:p-8 rounded-3xl max-w-2xl w-full text-center border-2 border-cyan-400 shadow-2xl my-auto">
         <div class="inline-block px-4 py-1 bg-cyan-500/20 text-cyan-300 rounded-full text-xs sm:text-sm font-bold mb-2">🎉 Stage Clear!</div>
         <h2 class="text-2xl sm:text-3xl font-title text-white mb-1">각성 무기 보상 선택!</h2>
@@ -304,7 +946,7 @@
         <!-- 3 Weapon Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-2">
             <!-- Item 1: Energy Bomb -->
-            <button onclick="selectItem('energy_drink')" class="glass-panel p-4 rounded-2xl hover:border-yellow-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group">
+            <button type="button" onclick="selectItem('energy_drink')" class="glass-panel p-4 rounded-2xl hover:border-yellow-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group cursor-pointer">
                 <div>
                     <div class="w-12 h-12 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
                         <i class="fa-solid fa-bolt"></i>
@@ -316,7 +958,7 @@
             </button>
 
             <!-- Item 2: Alarm Clock Laser -->
-            <button onclick="selectItem('alarm_laser')" class="glass-panel p-4 rounded-2xl hover:border-red-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group">
+            <button type="button" onclick="selectItem('alarm_laser')" class="glass-panel p-4 rounded-2xl hover:border-red-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group cursor-pointer">
                 <div>
                     <div class="w-12 h-12 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
                         <i class="fa-solid fa-clock"></i>
@@ -328,7 +970,7 @@
             </button>
 
             <!-- Item 3: Espresso Speed Blaster -->
-            <button onclick="selectItem('espresso_shot')" class="glass-panel p-4 rounded-2xl hover:border-amber-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group">
+            <button type="button" onclick="selectItem('espresso_shot')" class="glass-panel p-4 rounded-2xl hover:border-amber-400 transition transform hover:-translate-y-1 text-left flex flex-col justify-between border border-slate-700 bg-slate-800/60 hover:bg-slate-800 group cursor-pointer">
                 <div>
                     <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
                         <i class="fa-solid fa-mug-hot"></i>
@@ -343,7 +985,7 @@
 </div>
 
 <!-- 4. GAME OVER / RESULT SCREEN -->
-<div id="gameOverModal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-slate-950/95 p-4 overflow-y-auto">
+<div id="gameOverModal" class="hidden absolute inset-0 z-30 flex items-center justify-center bg-slate-950/95 p-4 overflow-y-auto">
     <div class="glass-panel p-6 sm:p-8 rounded-3xl max-w-md w-full text-center border-2 border-red-500 shadow-2xl my-auto">
         <div class="text-6xl text-red-500 mb-3"><i class="fa-solid fa-face-dizzy animate-bounce"></i></div>
         <h2 class="text-3xl font-title text-red-400 mb-2">식곤증 승리! (시간 초과)</h2>
@@ -362,7 +1004,7 @@
             </div>
         </div>
 
-        <button onclick="restartGame()" class="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-title text-xl rounded-2xl shadow-lg active:scale-95 transition">
+        <button type="button" onclick="restartGame()" class="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-title text-xl rounded-2xl shadow-lg active:scale-95 transition cursor-pointer">
             <i class="fa-solid fa-rotate-right"></i> 다시 찬물 끼얹고 도전!
         </button>
     </div>
@@ -372,75 +1014,131 @@
 <div id="canvasContainer" class="w-full h-full"></div>
 
 <script>
-    // --- GAME STATE VARIABLES ---
     let drowsinessLevel = 5;
     let currentStage = 1;
     let timeRemaining = 10.0;
     let isGameActive = false;
     let monsterKills = 0;
-    let activeWeapon = null; // 'energy_drink', 'alarm_laser', 'espresso_shot'
+    let activeWeapon = null;
     let speedBoostTimer = 0;
 
-    // Maze Dimensions & Cell parameters
     let mazeRows = 7;
     let mazeCols = 7;
     const CELL_SIZE = 4;
     let mazeGrid = [];
 
-    // Three.js Core Objects
     let scene, camera, renderer;
     let playerMesh, playerLight;
     let exitPortalMesh;
     let mazeWallsGroup, monsterGroup, itemFxGroup;
     let clock = new THREE.Clock();
 
-    // Controls State
     const keys = { KeyW: false, KeyS: false, KeyA: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
     let touchState = { up: false, down: false, left: false, right: false };
     let playerPos = { x: 0, z: 0 };
-
-    // Monster Array
     let monsters = [];
 
-    document.getElementById('drowsinessSlider').addEventListener('input', (e) => {
-        drowsinessLevel = parseInt(e.target.value);
-        document.getElementById('surveyValText').innerText = `Lv. ${drowsinessLevel}`;
+    document.addEventListener('DOMContentLoaded', () => {
+        // Copy Code Button Listener
+        const copyBtn = document.getElementById('copyCodeBtn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', copyWholeDocumentCode);
+        }
+
+        const slider = document.getElementById('drowsinessSlider');
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                drowsinessLevel = parseInt(e.target.value);
+                document.getElementById('surveyValText').innerText = `Lv. ${drowsinessLevel}`;
+                
+                let desc = "";
+                let size = Math.min(15, 5 + Math.floor(drowsinessLevel * 0.8));
+                if (size % 2 === 0) size++;
+                if (drowsinessLevel <= 3) desc = `📌 난이도: 쉬움 (${size}x${size}) | 1단계 괴물 없음`;
+                else if (drowsinessLevel <= 7) desc = `📌 난이도: 보통 (${size}x${size}) | 1단계 괴물 없음`;
+                else desc = `📌 난이도: 매운맛 (${size}x${size}) | 빠르게 달리지 않으면 타임오버!`;
+                document.getElementById('surveyDesc').innerText = desc;
+            });
+        }
+
+        const startBtn = document.getElementById('startBtn');
+        if (startBtn) {
+            startBtn.addEventListener('click', async () => {
+                try {
+                    await audio.init();
+                    audio.playWakeUpAlarm();
+                } catch(e) {
+                    console.warn(e);
+                }
+                
+                document.getElementById('surveyScreen').classList.add('hidden');
+                document.getElementById('gameHUD').classList.remove('hidden');
+
+                initThreeJS();
+                startStage(1);
+            });
+        }
+
+        const attackBtn = document.getElementById('attackBtn');
+        if (attackBtn) {
+            attackBtn.addEventListener('click', () => useActiveWeapon());
+        }
+
+        setupTouchBtn('btnUp', 'up');
+        setupTouchBtn('btnDown', 'down');
+        setupTouchBtn('btnLeft', 'left');
+        setupTouchBtn('btnRight', 'right');
+    });
+
+    // Helper function to copy the full HTML document
+    function copyWholeDocumentCode() {
+        const fullHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
         
-        let desc = "";
-        let size = Math.min(15, 5 + Math.floor(drowsinessLevel * 0.8));
-        if (size % 2 === 0) size++;
-        if (drowsinessLevel <= 3) desc = `📌 난이도: 쉬움 (${size}x${size}) | 1단계 괴물 없음`;
-        else if (drowsinessLevel <= 7) desc = `📌 난이도: 보통 (${size}x${size}) | 1단계 괴물 없음`;
-        else desc = `📌 난이도: 매운맛 (${size}x${size}) | 빠르게 달리지 않으면 타임오버!`;
-        document.getElementById('surveyDesc').innerText = desc;
-    });
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(fullHtml).then(showToast).catch(() => fallbackCopy(fullHtml));
+        } else {
+            fallbackCopy(fullHtml);
+        }
+    }
 
-    document.getElementById('startBtn').addEventListener('click', () => {
-        audio.init();
-        audio.playWakeUpAlarm();
-        document.getElementById('surveyScreen').classList.add('hidden');
-        document.getElementById('gameHUD').classList.remove('hidden');
-        initThreeJS();
-        startStage(1);
-    });
+    function fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showToast();
+        } catch (err) {
+            alert('복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
+        }
+        document.body.removeChild(textarea);
+    }
 
-    document.getElementById('attackBtn').addEventListener('click', () => {
-        useActiveWeapon();
-    });
+    function showToast() {
+        const toast = document.getElementById('copyToast');
+        if (!toast) return;
+        toast.classList.remove('hide');
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.classList.add('hide');
+        }, 3000);
+    }
 
-    // Touch D-Pad setup
-    const setupTouchBtn = (id, keyName) => {
+    function setupTouchBtn(id, keyName) {
         const btn = document.getElementById(id);
-        if(!btn) return;
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); touchState[keyName] = true; });
-        btn.addEventListener('touchend', (e) => { e.preventDefault(); touchState[keyName] = false; });
-        btn.addEventListener('mousedown', () => { touchState[keyName] = true; });
-        btn.addEventListener('mouseup', () => { touchState[keyName] = false; });
-    };
-    setupTouchBtn('btnUp', 'up');
-    setupTouchBtn('btnDown', 'down');
-    setupTouchBtn('btnLeft', 'left');
-    setupTouchBtn('btnRight', 'right');
+        if (!btn) return;
+        const start = (e) => { e.preventDefault(); touchState[keyName] = true; };
+        const end = (e) => { e.preventDefault(); touchState[keyName] = false; };
+        btn.addEventListener('touchstart', start, { passive: false });
+        btn.addEventListener('touchend', end, { passive: false });
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+    }
 
     window.addEventListener('keydown', (e) => {
         if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
@@ -456,26 +1154,28 @@
 
     function initThreeJS() {
         const container = document.getElementById('canvasContainer');
+        if (!container) return;
         container.innerHTML = '';
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0f1d);
-        scene.fog = new THREE.FogExp2(0x0a0f1d, 0.04);
+        scene.fog = new THREE.FogExp2(0x0a0f1d, 0.035);
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const width = window.innerWidth || 800;
+        const height = window.innerHeight || 600;
+
+        camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // Ambient Light
         const ambientLight = new THREE.AmbientLight(0x334155, 1.2);
         scene.add(ambientLight);
 
-        // Directional Light
         const dirLight = new THREE.DirectionalLight(0xf59e0b, 1.0);
         dirLight.position.set(20, 40, 20);
         dirLight.castShadow = true;
@@ -483,7 +1183,6 @@
         dirLight.shadow.mapSize.height = 1024;
         scene.add(dirLight);
 
-        // Groups
         mazeWallsGroup = new THREE.Group();
         monsterGroup = new THREE.Group();
         itemFxGroup = new THREE.Group();
@@ -491,17 +1190,15 @@
         scene.add(monsterGroup);
         scene.add(itemFxGroup);
 
-        // Create 3D Player Character
         create3DPlayer();
 
+        window.removeEventListener('resize', onWindowResize);
         window.addEventListener('resize', onWindowResize);
-        animate();
     }
 
     function create3DPlayer() {
         const playerGroup = new THREE.Group();
 
-        // Glowing Robot Body
         const bodyGeo = new THREE.SphereGeometry(0.8, 32, 32);
         const bodyMat = new THREE.MeshStandardMaterial({
             color: 0x38bdf8,
@@ -513,14 +1210,12 @@
         bodyMesh.castShadow = true;
         playerGroup.add(bodyMesh);
 
-        // Torus Ring Crown
         const ringGeo = new THREE.TorusGeometry(1.0, 0.1, 16, 32);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
         const ringMesh = new THREE.Mesh(ringGeo, ringMat);
         ringMesh.rotation.x = Math.PI / 2;
         playerGroup.add(ringMesh);
 
-        // Point Light for Player
         playerLight = new THREE.PointLight(0x38bdf8, 2.5, 15);
         playerLight.position.set(0, 1, 0);
         playerGroup.add(playerLight);
@@ -572,7 +1267,6 @@
         const topEdgeGeo = new THREE.BoxGeometry(CELL_SIZE, 0.2, CELL_SIZE);
         const topEdgeMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
 
-        // Floor Mesh
         const floorGeo = new THREE.PlaneGeometry(gridData.r * CELL_SIZE, gridData.c * CELL_SIZE);
         const floorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
         const floorMesh = new THREE.Mesh(floorGeo, floorMat);
@@ -598,3 +1292,386 @@
         }
 
         createExitPortal((gridData.r - 2) * CELL_SIZE, (gridData.c - 2) * CELL_SIZE);
+    }
+
+    function createExitPortal(x, z) {
+        if (exitPortalMesh) scene.remove(exitPortalMesh);
+
+        const portalGroup = new THREE.Group();
+        const cylinderGeo = new THREE.CylinderGeometry(1.2, 1.2, 3, 32);
+        const cylinderMat = new THREE.MeshBasicMaterial({
+            color: 0x10b981,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.8
+        });
+        const cylinder = new THREE.Mesh(cylinderGeo, cylinderMat);
+        portalGroup.add(cylinder);
+
+        const light = new THREE.PointLight(0x10b981, 3, 8);
+        portalGroup.add(light);
+
+        portalGroup.position.set(x, 0, z);
+        exitPortalMesh = portalGroup;
+        scene.add(exitPortalMesh);
+    }
+
+    function startStage(stageNum) {
+        currentStage = stageNum;
+        timeRemaining = 10.0;
+        isGameActive = true;
+
+        let baseSize = 5 + Math.floor(drowsinessLevel * 0.6) + (stageNum - 1) * 2;
+        if (baseSize % 2 === 0) baseSize++;
+        baseSize = Math.min(baseSize, 17);
+
+        mazeRows = baseSize;
+        mazeCols = baseSize;
+
+        const data = generateMazeData(mazeRows, mazeCols);
+        mazeGrid = data.grid;
+        build3DMaze(data);
+
+        playerPos.x = 1 * CELL_SIZE;
+        playerPos.z = 1 * CELL_SIZE;
+        if (playerMesh) playerMesh.position.set(playerPos.x, 0, playerPos.z);
+
+        monsters.forEach(m => monsterGroup.remove(m.mesh));
+        monsters = [];
+
+        // Stage 1 = Peace Mode (No Monsters)
+        if (currentStage > 1) {
+            spawnMonstersForStage();
+            document.getElementById('hudMonsterStatus').innerText = `⚠️ 식곤증 괴물 출몰 중!`;
+            document.getElementById('hudMonsterStatus').className = "text-[10px] sm:text-xs text-red-400 font-bold mt-0.5 animate-pulse";
+        } else {
+            document.getElementById('hudMonsterStatus').innerText = `🕊️ 평화 모드 (괴물 없음)`;
+            document.getElementById('hudMonsterStatus').className = "text-[10px] sm:text-xs text-emerald-400 font-bold mt-0.5";
+        }
+
+        document.getElementById('hudStage').innerText = `STAGE ${currentStage}`;
+        updateWeaponHUD();
+        clock.start();
+        animate();
+    }
+
+    function spawnMonstersForStage() {
+        const monsterCount = Math.min(8, currentStage + Math.floor(drowsinessLevel / 3));
+
+        for (let i = 0; i < monsterCount; i++) {
+            let rx, rz;
+            do {
+                rx = Math.floor(Math.random() * (mazeRows - 2)) + 1;
+                rz = Math.floor(Math.random() * (mazeCols - 2)) + 1;
+            } while (mazeGrid[rx][rz] !== 0 || (rx <= 2 && rz <= 2) || (rx >= mazeRows - 3 && rz >= mazeCols - 3));
+
+            const monsterGroupObj = new THREE.Group();
+            const bodyGeo = new THREE.DodecahedronGeometry(0.8, 1);
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: 0xef4444,
+                roughness: 0.3
+            });
+            const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            bodyMesh.castShadow = true;
+            monsterGroupObj.add(bodyMesh);
+
+            const eyeGeo = new THREE.SphereGeometry(0.2, 8, 8);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            const eye1 = new THREE.Mesh(eyeGeo, eyeMat);
+            eye1.position.set(0.3, 0.3, 0.6);
+            monsterGroupObj.add(eye1);
+
+            monsterGroupObj.position.set(rx * CELL_SIZE, 0, rz * CELL_SIZE);
+            monsterGroup.add(monsterGroupObj);
+
+            monsters.push({
+                mesh: monsterGroupObj,
+                gridX: rx,
+                gridZ: rz
+            });
+        }
+    }
+
+    function selectItem(itemType) {
+        activeWeapon = itemType;
+        document.getElementById('itemModal').classList.add('hidden');
+        audio.playVictory();
+        startStage(currentStage + 1);
+    }
+
+    function updateWeaponHUD() {
+        const hud = document.getElementById('hudWeapon');
+        if (!hud) return;
+        if (!activeWeapon) {
+            hud.innerHTML = `<span>맨손</span> <i class="fa-solid fa-hand"></i>`;
+        } else if (activeWeapon === 'energy_drink') {
+            hud.innerHTML = `<span class="text-yellow-400">에너지 폭탄</span> <i class="fa-solid fa-bolt text-yellow-400"></i>`;
+        } else if (activeWeapon === 'alarm_laser') {
+            hud.innerHTML = `<span class="text-red-400">알람 레이저</span> <i class="fa-solid fa-clock text-red-400"></i>`;
+        } else if (activeWeapon === 'espresso_shot') {
+            hud.innerHTML = `<span class="text-amber-400">에스프레소</span> <i class="fa-solid fa-mug-hot text-amber-400"></i>`;
+        }
+    }
+
+    function useActiveWeapon() {
+        if (!isGameActive || !playerMesh) return;
+
+        if (!activeWeapon) {
+            audio.playLaser();
+            return;
+        }
+
+        if (activeWeapon === 'energy_drink') {
+            audio.playExplosion();
+            createExplosionEffect(playerMesh.position);
+
+            monsters = monsters.filter(m => {
+                const dist = m.mesh.position.distanceTo(playerMesh.position);
+                if (dist < 12) {
+                    createMonsterDeathEffect(m.mesh.position);
+                    monsterGroup.remove(m.mesh);
+                    monsterKills++;
+                    return false;
+                }
+                return true;
+            });
+
+        } else if (activeWeapon === 'alarm_laser') {
+            audio.playLaser();
+            createLaserEffect();
+
+            monsters = monsters.filter(m => {
+                const dist = m.mesh.position.distanceTo(playerMesh.position);
+                if (dist < 18) {
+                    createMonsterDeathEffect(m.mesh.position);
+                    monsterGroup.remove(m.mesh);
+                    monsterKills++;
+                    return false;
+                }
+                return true;
+            });
+
+        } else if (activeWeapon === 'espresso_shot') {
+            audio.playWakeUpAlarm();
+            speedBoostTimer = 4.0;
+
+            monsters = monsters.filter(m => {
+                const dist = m.mesh.position.distanceTo(playerMesh.position);
+                if (dist < 8) {
+                    createMonsterDeathEffect(m.mesh.position);
+                    monsterGroup.remove(m.mesh);
+                    monsterKills++;
+                    return false;
+                }
+                return true;
+            });
+        }
+    }
+
+    function createExplosionEffect(pos) {
+        const ringGeo = new THREE.RingGeometry(0.5, 6, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.copy(pos);
+        itemFxGroup.add(ring);
+
+        let scale = 1;
+        const expand = setInterval(() => {
+            scale += 0.5;
+            ring.scale.set(scale, scale, scale);
+            ringMat.opacity -= 0.1;
+            if (ringMat.opacity <= 0) {
+                clearInterval(expand);
+                itemFxGroup.remove(ring);
+            }
+        }, 30);
+    }
+
+    function createLaserEffect() {
+        const laserGeo = new THREE.CylinderGeometry(0.3, 0.3, 20, 16);
+        const laserMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.9 });
+        const laser = new THREE.Mesh(laserGeo, laserMat);
+        laser.rotation.z = Math.PI / 2;
+        laser.position.copy(playerMesh.position);
+        laser.position.x += 10;
+        itemFxGroup.add(laser);
+
+        setTimeout(() => {
+            itemFxGroup.remove(laser);
+        }, 200);
+    }
+
+    function createMonsterDeathEffect(pos) {
+        const pGeo = new THREE.SphereGeometry(0.2, 8, 8);
+        const pMat = new THREE.MeshBasicMaterial({ color: 0xf87171 });
+        for(let i=0; i<8; i++) {
+            const p = new THREE.Mesh(pGeo, pMat);
+            p.position.copy(pos);
+            p.position.x += (Math.random() - 0.5) * 2;
+            p.position.z += (Math.random() - 0.5) * 2;
+            itemFxGroup.add(p);
+            setTimeout(() => itemFxGroup.remove(p), 400);
+        }
+    }
+
+    function checkWallCollision(newX, newZ) {
+        const radius = 0.6;
+        for (let r = 0; r < mazeRows; r++) {
+            for (let c = 0; c < mazeCols; c++) {
+                if (mazeGrid[r][c] === 1) {
+                    const wallX = r * CELL_SIZE;
+                    const wallZ = c * CELL_SIZE;
+
+                    const minX = wallX - CELL_SIZE / 2 - radius;
+                    const maxX = wallX + CELL_SIZE / 2 + radius;
+                    const minZ = wallZ - CELL_SIZE / 2 - radius;
+                    const maxZ = wallZ + CELL_SIZE / 2 + radius;
+
+                    if (newX >= minX && newX <= maxX && newZ >= minZ && newZ <= maxZ) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function animate() {
+        if (!isGameActive) return;
+        requestAnimationFrame(animate);
+
+        const delta = clock.getDelta();
+
+        timeRemaining -= delta;
+        if (timeRemaining <= 0) {
+            timeRemaining = 0;
+            gameOver();
+            return;
+        }
+
+        if (timeRemaining <= 3.0 && Math.floor(timeRemaining * 10) % 5 === 0) {
+            audio.playTick(true);
+        }
+
+        const timerEl = document.getElementById('hudTimer');
+        if (timerEl) {
+            timerEl.innerText = timeRemaining.toFixed(2);
+            if (timeRemaining <= 3.0) {
+                timerEl.classList.add('pulse-timer');
+            } else {
+                timerEl.classList.remove('pulse-timer');
+            }
+        }
+
+        let moveSpeed = 8.0;
+        if (speedBoostTimer > 0) {
+            speedBoostTimer -= delta;
+            moveSpeed = 12.0;
+        }
+
+        let dx = 0;
+        let dz = 0;
+
+        if (keys.KeyW || keys.ArrowUp || touchState.up) dz -= 1;
+        if (keys.KeyS || keys.ArrowDown || touchState.down) dz += 1;
+        if (keys.KeyA || keys.ArrowLeft || touchState.left) dx -= 1;
+        if (keys.KeyD || keys.ArrowRight || touchState.right) dx += 1;
+
+        if ((dx !== 0 || dz !== 0) && playerMesh) {
+            const len = Math.sqrt(dx * dx + dz * dz);
+            const stepX = (dx / len) * moveSpeed * delta;
+            const stepZ = (dz / len) * moveSpeed * delta;
+
+            if (!checkWallCollision(playerPos.x + stepX, playerPos.z)) {
+                playerPos.x += stepX;
+            }
+            if (!checkWallCollision(playerPos.x, playerPos.z + stepZ)) {
+                playerPos.z += stepZ;
+            }
+
+            playerMesh.position.set(playerPos.x, 0, playerPos.z);
+        }
+
+        if (playerMesh && playerMesh.children[1]) {
+            playerMesh.children[1].rotation.z += delta * 3;
+        }
+
+        if (camera) {
+            camera.position.x = playerPos.x;
+            camera.position.y = 14;
+            camera.position.z = playerPos.z + 10;
+            camera.lookAt(playerPos.x, 0, playerPos.z);
+        }
+
+        if (exitPortalMesh) {
+            const exitPos = exitPortalMesh.position;
+            const distToExit = Math.hypot(playerPos.x - exitPos.x, playerPos.z - exitPos.z);
+            if (distToExit < 1.8) {
+                stageCleared();
+                return;
+            }
+        }
+
+        monsters.forEach(m => {
+            m.mesh.rotation.y += delta * 2;
+            m.mesh.position.y = Math.sin(clock.getElapsedTime() * 4) * 0.3;
+        });
+
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+    }
+
+    function stageCleared() {
+        isGameActive = false;
+        audio.playVictory();
+
+        try {
+            if (window.confetti) {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        } catch(e) {}
+
+        setTimeout(() => {
+            document.getElementById('itemModal').classList.remove('hidden');
+        }, 300);
+    }
+
+    function gameOver() {
+        isGameActive = false;
+        audio.playFail();
+
+        document.getElementById('resultStage').innerText = `STAGE ${currentStage}`;
+        document.getElementById('resultKills').innerText = `${monsterKills} 마리`;
+        document.getElementById('gameOverModal').classList.remove('hidden');
+    }
+
+    async function restartGame() {
+        monsterKills = 0;
+        activeWeapon = null;
+        try {
+            await audio.init();
+        } catch(e) {}
+        document.getElementById('gameOverModal').classList.add('hidden');
+        document.getElementById('surveyScreen').classList.remove('hidden');
+    }
+
+    function onWindowResize() {
+        if (!camera || !renderer) return;
+        const w = window.innerWidth || 800;
+        const h = window.innerHeight || 600;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    }
+</script>
+
+
+</body></html>
+     
+      
